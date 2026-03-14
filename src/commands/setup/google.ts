@@ -123,11 +123,10 @@ async function selectOrCreateProject(): Promise<string | null> {
   }
 
   // Create new
-  const defaultId = `skillsync-${Date.now().toString().slice(-6)}`;
-  const rawId = await ask(`\nProject ID ${chalk.dim(`(leave blank for "${defaultId}")`)}): `);
-  const projectId = rawId || defaultId;
-  const projectName = await ask(`Project display name ${chalk.dim('(leave blank for "SkillSync")')}: `);
-  const name = projectName || "SkillSync";
+  const rawName = await ask(`\nProject name ${chalk.dim('(leave blank for "SkillSync")')}: `);
+  const name = rawName || "SkillSync";
+  const projectId = name.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "")
+    + "-" + Date.now().toString().slice(-6);
 
   console.log(chalk.dim(`\n  Creating project ${projectId}...`));
   const r = gcloudExec(["projects", "create", projectId, `--name=${name}`]);
@@ -137,27 +136,6 @@ async function selectOrCreateProject(): Promise<string | null> {
   }
   console.log(chalk.green(`  ✓ Project "${name}" created (${projectId})`));
   return projectId;
-}
-
-// ─── OAuth consent screen ─────────────────────────────────────────────────────
-
-function ensureOAuthConsentScreen(projectId: string, email: string): void {
-  console.log(chalk.dim("  Configuring OAuth consent screen..."));
-  const r = gcloudExec([
-    "alpha", "iap", "oauth-brands", "create",
-    `--application_title=SkillSync`,
-    `--support_email=${email}`,
-    `--project=${projectId}`,
-  ]);
-  // This command errors if a brand already exists — that's fine
-  if (r.ok) {
-    console.log(chalk.green("  ✓ OAuth consent screen configured"));
-  } else if (r.stderr.includes("already exists") || r.stderr.includes("ALREADY_EXISTS")) {
-    console.log(chalk.green("  ✓ OAuth consent screen already configured"));
-  } else {
-    // Not fatal — user can set it up in the console
-    console.log(chalk.yellow("  ⚠ Could not auto-configure consent screen (will do manually in browser)"));
-  }
 }
 
 // ─── Open browser helper ──────────────────────────────────────────────────────
@@ -258,12 +236,8 @@ export async function setupGoogleCommand(): Promise<void> {
     }
   }
 
-  // ── OAuth consent screen ──────────────────────────────────────────────────
-  console.log(chalk.bold("\nStep 5 — OAuth Consent Screen\n"));
-  ensureOAuthConsentScreen(projectId, account);
-
   // ── OAuth credentials (browser) ───────────────────────────────────────────
-  console.log(chalk.bold("\nStep 6 — Create OAuth 2.0 Credentials\n"));
+  console.log(chalk.bold("\nStep 5 — Create OAuth 2.0 Credentials\n"));
   console.log("  Google does not allow creating OAuth client credentials from the CLI.");
   console.log("  Opening the Google Cloud Console to create them...\n");
 
@@ -316,6 +290,21 @@ export async function setupGoogleCommand(): Promise<void> {
   ensureConfigDir();
   fs.copyFileSync(credSrc, CREDENTIALS_PATH);
   console.log(chalk.green(`\n  ✓ Credentials saved to ~/.skillssync/credentials.json`));
+
+  // ── Add test user ─────────────────────────────────────────────────────────
+  console.log(chalk.bold("\nStep 6 — Add Test User\n"));
+  console.log("  Your app is in Testing mode. You must add your Google account as a test user.");
+  console.log("  Opening the OAuth consent screen...\n");
+  console.log(chalk.dim("  Instructions:"));
+  console.log(chalk.dim("    1. Scroll down to \"Test users\""));
+  console.log(chalk.dim(`    2. Click \"Add users\" → enter ${chalk.white(account)}`));
+  console.log(chalk.dim("    3. Click \"Save\"\n"));
+
+  const consentUrl = `https://console.cloud.google.com/apis/credentials/consent?project=${projectId}`;
+  console.log(`  URL: ${chalk.cyan(consentUrl)}\n`);
+  openUrl(consentUrl);
+
+  await ask("Press Enter once you have added your email as a test user...");
 
   // ── OAuth flow ────────────────────────────────────────────────────────────
   console.log(chalk.bold("\nStep 7 — Authorize SkillSync\n"));

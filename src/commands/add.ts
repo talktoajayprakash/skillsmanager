@@ -1,11 +1,19 @@
 import fs from "fs";
 import path from "path";
+import readline from "readline";
 import chalk from "chalk";
 import ora from "ora";
 import YAML from "yaml";
-import { readConfig } from "../config.js";
+import { readConfig, writeConfig, CONFIG_PATH } from "../config.js";
 import { getAuthClient } from "../auth.js";
 import { GDriveBackend } from "../backends/gdrive.js";
+
+function ask(question: string): Promise<string> {
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  return new Promise((resolve) => {
+    rl.question(question, (ans) => { rl.close(); resolve(ans.trim()); });
+  });
+}
 
 export async function addCommand(
   skillPath: string,
@@ -42,12 +50,35 @@ export async function addCommand(
     return;
   }
 
-  const config = readConfig();
+  let config;
+  try {
+    config = readConfig();
+  } catch {
+    config = { registries: [], discoveredAt: new Date().toISOString() };
+  }
+
   if (config.registries.length === 0) {
-    console.log(
-      chalk.red("No registries configured. Run 'skillsync init' first.")
-    );
-    return;
+    console.log(chalk.yellow("No registries found."));
+    const ans = await ask(`Create a new registry in Google Drive now? ${chalk.dim("[y/n]")} `);
+    if (!ans.toLowerCase().startsWith("y")) {
+      console.log(chalk.dim("Run 'skillsync registry create' to set one up."));
+      return;
+    }
+    const nameInput = await ask(`Registry name ${chalk.dim('(leave blank for "my-skills")')}: `);
+    const folderName = nameInput || "my-skills";
+
+    const auth = getAuthClient();
+    const backend = new GDriveBackend(auth);
+    const spinner = ora(`Creating registry "${folderName}" in Google Drive...`).start();
+    try {
+      const registry = await backend.createRegistry(folderName);
+      spinner.succeed(`Registry "${folderName}" created`);
+      config.registries.push(registry);
+      writeConfig(config);
+    } catch (err) {
+      spinner.fail(`Failed to create registry: ${(err as Error).message}`);
+      return;
+    }
   }
 
   // Pick registry — first one by default, or by name

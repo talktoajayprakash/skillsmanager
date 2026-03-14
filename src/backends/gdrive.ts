@@ -177,6 +177,37 @@ export class GDriveBackend implements StorageBackend {
     } while (pageToken);
   }
 
+  async createRegistry(folderName: string): Promise<RegistryInfo> {
+    // Create the folder in Drive root
+    const folderRes = await this.drive.files.create({
+      requestBody: {
+        name: folderName,
+        mimeType: FOLDER_MIME,
+      },
+      fields: "id, name",
+    });
+    const folderId = folderRes.data.id!;
+
+    // Create empty SKILLS_SYNC.yaml inside it
+    const emptyRegistry: RegistryFile = { name: folderName, owner: "", skills: [] };
+    const content = serializeRegistry(emptyRegistry);
+    const fileRes = await this.drive.files.create({
+      requestBody: {
+        name: REGISTRY_FILENAME,
+        parents: [folderId],
+      },
+      media: { mimeType: "text/yaml", body: Readable.from(content) },
+      fields: "id",
+    });
+
+    return {
+      name: folderName,
+      backend: "gdrive",
+      folderId,
+      registryFileId: fileRes.data.id ?? undefined,
+    };
+  }
+
   async uploadSkill(
     registry: RegistryInfo,
     localPath: string,

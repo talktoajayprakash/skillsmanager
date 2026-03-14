@@ -10,6 +10,7 @@ import { addCommand } from "./commands/add.js";
 import { updateCommand } from "./commands/update.js";
 import { refreshCommand } from "./commands/refresh.js";
 import { setupGoogleCommand } from "./commands/setup/google.js";
+import { registryCreateCommand } from "./commands/registry.js";
 
 const supportedAgents = Object.keys(AGENT_PATHS).join(", ");
 
@@ -74,6 +75,15 @@ program
   .command("refresh")
   .description("Re-run registry discovery to pick up new registries")
   .action(refreshCommand);
+
+const registry = program
+  .command("registry")
+  .description("Manage registries");
+
+registry
+  .command("create")
+  .description("Create a new registry (Google Drive folder + SKILLS_SYNC.yaml)")
+  .action(registryCreateCommand);
 
 program.parseAsync(process.argv).catch((err: Error) => {
   console.error(chalk.red("Error:"), err.message);
