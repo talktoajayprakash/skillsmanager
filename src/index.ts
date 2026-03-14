@@ -9,6 +9,7 @@ import { fetchCommand } from "./commands/fetch.js";
 import { addCommand } from "./commands/add.js";
 import { updateCommand } from "./commands/update.js";
 import { refreshCommand } from "./commands/refresh.js";
+import { setupGoogleCommand } from "./commands/setup/google.js";
 
 const supportedAgents = Object.keys(AGENT_PATHS).join(", ");
 
@@ -20,6 +21,15 @@ program
       "All skill names are unique — just use the name, no paths needed."
   )
   .version("0.1.0");
+
+const setup = program
+  .command("setup")
+  .description("Set up storage backends");
+
+setup
+  .command("google")
+  .description("Set up Google Drive (installs gcloud, creates project, configures credentials)")
+  .action(setupGoogleCommand);
 
 program
   .command("init")
