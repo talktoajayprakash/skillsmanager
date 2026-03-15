@@ -12,9 +12,16 @@ const REGISTRY_FILENAME = "SKILLS_SYNC.yaml";
 
 export class GDriveBackend implements StorageBackend {
   private drive: ReturnType<typeof google.drive>;
+  private oauth2: ReturnType<typeof google.oauth2>;
 
   constructor(auth: OAuth2Client) {
     this.drive = google.drive({ version: "v3", auth });
+    this.oauth2 = google.oauth2({ version: "v2", auth });
+  }
+
+  async getOwnerEmail(): Promise<string> {
+    const res = await this.oauth2.userinfo.get();
+    return res.data.email ?? "";
   }
 
   async discoverCollections(): Promise<CollectionInfo[]> {
@@ -182,7 +189,8 @@ export class GDriveBackend implements StorageBackend {
     });
     const folderId = folderRes.data.id!;
 
-    const emptyCollection: CollectionFile = { name: folderName, owner: "", skills: [] };
+    const owner = await this.getOwnerEmail();
+    const emptyCollection: CollectionFile = { name: folderName, owner, skills: [] };
     const content = serializeRegistry(emptyCollection);
     const fileRes = await this.drive.files.create({
       requestBody: {
