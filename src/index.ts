@@ -11,6 +11,7 @@ import { updateCommand } from "./commands/update.js";
 import { refreshCommand } from "./commands/refresh.js";
 import { setupGoogleCommand } from "./commands/setup/google.js";
 import { collectionCreateCommand } from "./commands/collection.js";
+import { installCommand, uninstallCommand } from "./commands/install.js";
 
 const supportedAgents = Object.keys(AGENT_PATHS).join(", ");
 
@@ -31,6 +32,9 @@ program
     "  Skill scope:\n" +
     "    --scope global   install to ~/.agent/skills/    (default, all projects)\n" +
     "    --scope project  install to ./.agent/skills/    (this project only)\n\n" +
+    "  Install the skillsync skill for agents:\n" +
+    "    skillsync install                               # install to all agents\n" +
+    "    skillsync install --agent claude,codex          # install to specific agents\n\n" +
     "  First-time setup (human only):\n" +
     "    skillsync setup google                          # configure Google Drive credentials"
   )
@@ -112,6 +116,34 @@ collection
   .command("create [name]")
   .description("Create a new collection. Defaults to SKILLSYNC_MY_SKILLS if no name is given.")
   .action(collectionCreateCommand);
+
+program
+  .command("install")
+  .description(
+    "Install the bundled skillsync skill to agent directories.\n" +
+    "  No flags: installs to all supported agents.\n" +
+    "  --agent claude,codex: install to specific agents only.\n" +
+    "  --path <dir>: install to a custom directory."
+  )
+  .option("--agent <agents>", "Comma-separated list of agents to install for")
+  .option("--path <dir>", "Custom directory to install the skill to")
+  .action((options: { agent?: string; path?: string }) =>
+    installCommand(options)
+  );
+
+program
+  .command("uninstall")
+  .description(
+    "Remove the skillsync skill from agent directories.\n" +
+    "  No flags: removes from all agents.\n" +
+    "  --agent claude: remove from specific agents only.\n" +
+    "  --path <dir>: remove from a custom directory."
+  )
+  .option("--agent <agents>", "Comma-separated list of agents to remove from")
+  .option("--path <dir>", "Custom directory to remove the skill from")
+  .action((options: { agent?: string; path?: string }) =>
+    uninstallCommand(options)
+  );
 
 program.parseAsync(process.argv).catch((err: Error) => {
   console.error(chalk.red("Error:"), err.message);

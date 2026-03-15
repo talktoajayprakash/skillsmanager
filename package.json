@@ -8,15 +8,13 @@
   },
   "files": [
     "dist/",
-    "skills/",
-    "scripts/"
+    "skills/"
   ],
   "scripts": {
     "build": "tsc",
     "dev": "node --loader ts-node/esm src/index.ts",
     "test": "vitest run",
-    "test:watch": "vitest",
-    "postinstall": "node scripts/postinstall.mjs"
+    "test:watch": "vitest"
   },
   "dependencies": {
     "chalk": "^4.1.2",
