@@ -1,4 +1,4 @@
-# SkillsSync — CLI for Syncing Agent Skills Across Machines
+# SkillSync — CLI for Syncing Agent Skills Across Machines
 
 ## The Problem
 
@@ -6,406 +6,263 @@ Agent Skills (per the open standard at agentskills.io) are filesystem-based capa
 - `~/.claude/skills/` — global skills, available to all projects
 - `.claude/skills/` — project-scoped skills
 
-This is powerful, but it creates a real pain point: **skills are trapped on the machine where you created them.** If you work across multiple machines, want to share skills with a team, or just want a backup, you have no native sync mechanism. You end up manually copying directories, losing track of versions, or re-writing skills from scratch.
+This is powerful, but it creates a real pain point: **skills are trapped on the machine where you created them.** If you work across multiple machines, want to share skills with a team, or just want a backup, you have no native sync mechanism.
 
-**SkillsSync** solves this by giving you a CLI to browse your skills in remote storage and selectively fetch them into your current project's `.claude/skills/` directory.
+**SkillSync** solves this by giving you a CLI to store skills in remote storage (Google Drive today, more backends later) and selectively fetch them into any agent's skills directory.
 
 ---
 
 ## What is a Skill?
 
-A skill is a directory under `~/.claude/skills/<skill-name>/` containing:
+A skill is a directory containing at minimum a `SKILL.md` file:
 
 ```
-pdf-skill/
+write-linkedin-post/
 ├── SKILL.md        ← required: YAML frontmatter (name, description) + instructions
-├── REFERENCE.md    ← optional: reference docs Claude loads on demand
-└── scripts/
-    └── process.py  ← optional: scripts Claude can invoke via bash
+├── REFERENCE.md    ← optional: reference docs the agent loads on demand
+└── scripts/        ← optional: scripts the agent can invoke
 ```
 
-The `SKILL.md` frontmatter is the discovery contract — Claude reads it at startup to know what the skill does and when to invoke it. The rest loads lazily only when needed.
+`SKILL.md` frontmatter is the discovery contract:
 
+```markdown
 ---
-
-## The Idea: SkillsSync
-
-Two parts:
-
-1. **`SKILLS_SYNC.yaml`** — a registry file that indexes all skills in a storage location
-2. **`skillsync` CLI** — a client that agents use to discover, fetch, add, and update skills in that registry
-
-### Core Operations
-
-The CLI exposes three key methods:
-
-**`get_all()`** — Read `SKILLS_SYNC.yaml` from the remote and return the full index of available skills (name, description). No files are downloaded — this is a lightweight metadata read.
-
-```bash
-skillsync list                      # show all skills in the collection
-skillsync search "pdf"              # search skills by name or description
-```
-
-**`fetch_skill(name, agent)`** — Download a specific skill from remote storage into the global cache and symlink it to the calling agent's skills directory.
-
-```bash
-skillsync fetch pdf-skill --agent claude        # fetch and symlink to ~/.claude/skills/
-skillsync fetch pdf-skill --agent codex         # fetch and symlink to ~/.codex/skills/
-skillsync fetch pdf-skill code-review --agent claude  # fetch multiple
-```
-
-**`add_skill(path)`** — Add a new local skill to the remote collection. Reads the skill directory, uploads it to remote storage, and adds it to `SKILLS_SYNC.yaml`.
-
-```bash
-skillsync add ./my-new-skill               # add a skill from a local path
-skillsync add .claude/skills/pdf-skill      # add a project skill to the collection
-```
-
-**`update_skill(name)`** — Push changes to an existing skill back to remote storage, updating both the skill files and the `SKILLS_SYNC.yaml` index.
-
-```bash
-skillsync update pdf-skill                  # update a skill in remote
-skillsync update code-review                # update another skill
-```
-
-### Setup
-
-```bash
-skillsync init                              # log into GitHub/Google Drive, auto-discover registries
+name: write-linkedin-post
+description: Writes clear, concise LinkedIn posts with proper formatting
+---
 ```
 
 ---
 
-## The Registry: `SKILLS_SYNC.yaml`
+## Core Concepts
 
-`SKILLS_SYNC.yaml` is a **registry** — a single file that indexes all skills in a storage location. It contains metadata about the collection and an entry for every skill with its name, description, and path within that storage.
+### Collections
+
+A **collection** is a folder in remote storage containing a `SKILLS_SYNC.yaml` file and skill subdirectories. It's the unit of organization — one person might have one collection (`MY_SKILLS`), or multiple (`personal`, `work`).
+
+Collections are automatically discovered by searching for any `SKILLS_SYNC.yaml` owned by the authenticated user.
+
+### `SKILLS_SYNC.yaml`
+
+The registry file that indexes all skills in a collection:
 
 ```yaml
-# SKILLS_SYNC.yaml
-version: 1
-name: "My Skills"
-description: "Personal collection of agent skills"
-created: 2026-03-13
-
+name: personal
+owner: you@gmail.com
 skills:
-  - name: pdf-skill
-    path: pdf-skill/
-    description: "Process and fill PDF forms"
-
+  - name: write-linkedin-post
+    path: write-linkedin-post/
+    description: Writes clear, concise LinkedIn posts with proper formatting
   - name: code-review
     path: code-review/
-    description: "Opinionated code review workflow"
-
-  - name: deploy-check
-    path: deploy-check/
-    description: "Pre-deploy validation checklist"
-
-  - name: react-patterns
-    path: react-patterns/
-    description: "React component scaffolding"
+    description: Opinionated code review workflow
 ```
 
-**The registry is the key abstraction:**
-- An agent reads this one file to discover all available skills — no directory traversal needed
-- Each entry has a `path` pointing to where the skill lives in that storage
-- The `skillsync` CLI keeps this registry in sync when skills are added or updated
-- Skill names are globally unique within a registry (following the agentskills.io spec: lowercase, hyphens, 1-64 chars)
+- `name` is the logical name of the collection (without the `SKILLSYNC_` Drive prefix)
+- `owner` is the authenticated user's email
+- Skills are globally unique by name within a collection
 
-### Storage layout
+### Drive Folder Naming
 
-The registry file sits alongside the skill directories in any storage system:
+All Google Drive folders created by SkillSync are prefixed with `SKILLSYNC_` to avoid collisions with regular Drive folders:
 
-```
-<any-storage-location>/
-├── SKILLS_SYNC.yaml               ← the registry
-├── pdf-skill/
-│   ├── SKILL.md
-│   └── REFERENCE.md
-├── code-review/
-│   └── SKILL.md
-└── deploy-check/
-    ├── SKILL.md
-    └── scripts/
-        └── validate.sh
-```
+| Drive folder | Logical name (in YAML + CLI) |
+|---|---|
+| `SKILLSYNC_MY_SKILLS` | `MY_SKILLS` |
+| `SKILLSYNC_work` | `work` |
+| `SKILLSYNC_personal` | `personal` |
 
-Flat structure. Every skill is a direct child of the storage root. The `path` field in the registry points to each skill's directory.
-
-### How it works
-
-1. The registry (`SKILLS_SYNC.yaml`) lives in a storage backend (GitHub repo, Google Drive folder, etc.)
-2. The `skillsync` CLI is the client that agents use to interact with the registry
-3. Agents **discover** skills by reading the registry (`skillsync list`)
-4. Agents **fetch** skills by name — the CLI uses the `path` field to locate and download the skill
-5. Agents **add** new skills — the CLI uploads the skill directory and adds an entry to the registry
-6. Agents **update** existing skills — the CLI uploads the changed files and updates the registry entry
-
-**Why this matters for backends:** Backend adapters only need to implement: read file, write file, list directory, download directory. The registry handles discovery uniformly. Switching backends changes the transport, not the protocol.
+The prefix is stripped everywhere in the CLI — users and agents always work with the clean logical name.
 
 ---
 
-## Automatic Registry Discovery
-
-When the user runs `skillsync init`, the CLI logs into the user's accounts and **automatically discovers all registries** the user owns. No manual configuration of repos or folders needed.
-
-### How discovery works
-
-- **GitHub**: Uses `gh` auth. Queries the GitHub API for all repos owned by the authenticated user. Checks each for a `SKILLS_SYNC.yaml` at the root. Repos owned by the user or orgs they belong to are included.
-- **Google Drive**: Uses OAuth2. Searches for all files named `SKILLS_SYNC.yaml` owned by the authenticated user across their Drive.
-
-The CLI caches the discovered registry list locally. Running `skillsync refresh` re-runs discovery to pick up new registries.
-
-### What the agent sees
-
-The agent doesn't know or care about backends. `skillsync list` aggregates across all discovered registries into a single flat list:
-
-```
-NAME              DESCRIPTION                         SOURCE
-pdf-skill         Process and fill PDF forms           github:ajay/my-skills
-code-review       Opinionated code review workflow     github:myorg/team-skills
-deploy-check      Pre-deploy validation checklist      gdrive:My Agent Skills
-```
-
-`skillsync fetch pdf-skill --agent claude` — the CLI knows which registry owns `pdf-skill` and fetches it from the right backend. The agent just uses the name.
-
-### Init flow
+## CLI Commands
 
 ```bash
+# Google Drive setup (human-facing, interactive)
+skillsync setup google
+
+# Discover / refresh collections
 skillsync init
+skillsync refresh
+
+# Browse skills
+skillsync list
+skillsync search <query>
+
+# Fetch a skill into an agent's skills directory
+skillsync fetch <name> --agent <agent>
+
+# Add a local skill to a collection
+skillsync add <path>
+skillsync add <path> --collection <name>
+
+# Push local changes to an existing skill back to Drive
+skillsync update <name>
+
+# Manage collections
+skillsync collection create [name]
 ```
 
-```
-GitHub...
-  ✓ Authenticated as ajay (via gh auth)
-  ✓ Found 2 registries:
-    github:ajay/my-skills           (4 skills)
-    github:myorg/team-skills        (12 skills)
+### Agent-first design
 
-Google Drive...
-  ✗ No credentials found at ~/.skillssync/credentials.json
-    To set up Google Drive:
-    1. Go to https://console.cloud.google.com/
-    2. Create a project → Enable Google Drive API
-    3. Create OAuth credentials (Desktop app) → Download JSON
-    4. Save as ~/.skillssync/credentials.json
-    5. Run `skillsync init` again
-    Skipping Google Drive for now.
-
-16 skills available across 2 registries.
-
-Run `skillsync list` to browse all available skills.
-```
-
-On subsequent run after adding credentials:
-
-```
-skills init
-```
-
-```
-GitHub...
-  ✓ Authenticated as ajay (via gh auth)
-  ✓ Found 2 registries (cached)
-
-Google Drive...
-  ✓ Credentials found. Opening browser for consent...
-  ✓ Authenticated
-  ✓ Found 1 registry:
-    gdrive:My Agent Skills          (3 skills)
-
-19 skills available across 3 registries.
-```
+All commands except `setup google` are **non-interactive** — they never block waiting for stdin. If something is missing (no collection, no credentials), they fail fast with a clear error message. This makes them safe to call from any AI agent.
 
 ---
 
-## Storage Backends
+## Authentication
 
-Backends are transport mechanisms. Each one just needs to know how to read/write files alongside a `SKILLS_SYNC.yaml`. The CLI abstracts the backend away from the agent entirely.
+No explicit login step required. Any command that needs Drive access calls `ensureAuth()` which:
 
-### GitHub (git-based)
-- Each registry is a repo with `SKILLS_SYNC.yaml` at the root
-- Repos are cloned to `~/.skillssync/cache/<owner>/<repo>/` on first fetch
-- `skillsync list` reads from the local clone (does `git pull` to refresh)
-- `skillsync fetch` creates symlinks from cache to agent directory — instant, no download needed
-- `skillsync add` / `skillsync update` copies files into the clone, commits, and pushes
-- Auth via existing `gh auth` — no extra credential setup
-- Git gives versioning and history for free
+1. Checks `~/.skillssync/credentials.json` exists — if not, throws with `Run: skillsync setup google`
+2. Checks `~/.skillssync/token.json` exists — if not, launches the OAuth flow automatically
+3. Returns the authenticated client with auto-refresh on token expiry
 
-### Google Drive
-- Each registry is a folder containing `SKILLS_SYNC.yaml`
-- `skillsync list` reads `SKILLS_SYNC.yaml` via a single API call
-- `skillsync fetch` downloads the skill directory to `~/.skillssync/cache/gdrive/<folder-id>/<skill>/`
-- `skillsync add` / `skillsync update` uploads files and updates the registry
-- Auth via OAuth2 (Desktop app flow) — user creates their own Google Cloud project and OAuth credentials (one-time setup), then browser consent once, auto-refreshed after that
-- Uses the `drive.file` scope (least privilege — only accesses files the app itself created) or `drive.readonly` + `drive` for discovery of existing files
-
-**Google Drive one-time setup:**
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a project (e.g. "SkillsSync")
-3. Enable the Google Drive API
-4. Create OAuth 2.0 credentials → Application type: "Desktop app"
-5. Download the credentials JSON and save as `~/.skillssync/credentials.json`
-6. Run `skillsync init` — browser opens for consent, token is stored and auto-refreshed
-
-### Future backends
-- **S3 / R2 / MinIO** — for private cloud storage
-- **Local directory / NFS** — for offline or corporate environments
+`skillsync setup google` is the one-time human-facing wizard that walks through:
+1. Installing `gcloud` CLI (via Homebrew on macOS)
+2. `gcloud auth login`
+3. Creating or selecting a Google Cloud project
+4. Enabling the Google Drive API
+5. Opening the browser to create OAuth 2.0 Desktop credentials
+6. Adding the authenticated user as a test user on the OAuth consent screen
+7. Running the OAuth flow to save `token.json`
 
 ---
 
-## Configuration
+## Auto-Discovery
 
-Stored at `~/.skillssync/config.json` (created by `skillsync init`):
+On first use of any command, `ensureReady()` runs `discoverCollections()` if no config exists yet:
 
-```json
-{
-  "registries": [
-    {
-      "name": "ajay/my-skills",
-      "backend": "github",
-      "repo": "ajay/my-skills",
-      "branch": "main"
-    },
-    {
-      "name": "myorg/team-skills",
-      "backend": "github",
-      "repo": "myorg/team-skills",
-      "branch": "main"
-    },
-    {
-      "name": "My Agent Skills",
-      "backend": "gdrive",
-      "folderId": "abc123"
-    }
-  ],
-  "discoveredAt": "2026-03-13T00:00:00.000Z"
-}
+```
+Drive API query: name='SKILLS_SYNC.yaml' and 'me' in owners and trashed=false
 ```
 
-Auth:
-- **GitHub** — uses existing `gh auth` token. No extra credential files.
-- **Google Drive** — user creates their own Google Cloud project + OAuth credentials (one-time). Stored as `~/.skillssync/credentials.json` (OAuth client ID/secret) + `~/.skillssync/token.json` (access + refresh token, auto-refreshed)
-
-The registry list is auto-populated during `skillsync init` and refreshed with `skillsync refresh`.
+For each match, fetches the parent folder name, strips the `SKILLSYNC_` prefix, and stores the collection in `~/.skillssync/config.json`.
 
 ---
 
 ## Local Cache and Agent Symlinks
 
-Skills are cached locally per-registry:
+Skills are cached locally at:
 
 ```
-~/.skillssync/cache/
-├── github/
-│   ├── ajay/my-skills/              ← git clone of the repo
-│   │   ├── SKILLS_SYNC.yaml
-│   │   ├── pdf-skill/
-│   │   └── code-review/
-│   └── myorg/team-skills/           ← git clone of another repo
-│       ├── SKILLS_SYNC.yaml
-│       └── deploy-check/
-└── gdrive/
-    └── abc123/                      ← Drive folder ID
-        ├── SKILLS_SYNC.yaml
-        └── react-patterns/
+~/.skillssync/cache/<collection-uuid>/<skill-name>/
 ```
 
-When `skillsync fetch pdf-skill --agent claude` is run, the CLI:
-1. Looks up which registry owns `pdf-skill` (from the cached index)
-2. Locates the skill in the local cache (`~/.skillssync/cache/github/ajay/my-skills/pdf-skill/`)
-3. Creates a symlink: `~/.claude/skills/pdf-skill → ~/.skillssync/cache/github/ajay/my-skills/pdf-skill/`
+The UUID is a stable identifier assigned per collection in `config.json`. It is backend-agnostic — it does not encode the backend type or folder ID. This keeps cache paths stable even if a collection is renamed or migrated to a different backend.
+
+When `skillsync fetch write-linkedin-post --agent claude` is run:
+1. Looks up which collection owns the skill
+2. Downloads to `~/.skillssync/cache/<uuid>/write-linkedin-post/`
+3. Creates symlink: `~/.claude/skills/write-linkedin-post → ~/.skillssync/cache/<uuid>/write-linkedin-post/`
+
+Multiple agents can be linked to the same cache entry:
 
 ```
-~/.claude/skills/pdf-skill       → ~/.skillssync/cache/github/ajay/my-skills/pdf-skill      (symlink)
-~/.claude/skills/deploy-check    → ~/.skillssync/cache/github/myorg/team-skills/deploy-check (symlink)
-~/.codex/skills/pdf-skill        → ~/.skillssync/cache/github/ajay/my-skills/pdf-skill       (symlink)
+~/.claude/skills/write-linkedin-post  →  ~/.skillssync/cache/<uuid>/write-linkedin-post/
+~/.codex/skills/write-linkedin-post   →  ~/.skillssync/cache/<uuid>/write-linkedin-post/
 ```
 
-Benefits:
-- **Single update point** — fetch once, every linked agent sees the change
-- **No drift** — all agents always use the same version of a skill
-- **Lightweight** — symlinks use no extra disk space
-- **Multi-registry** — skills from different registries coexist without name collisions in the cache
+One copy, many agents. Update once, all agents get the change.
+
+### Supported agents
+
+| Agent | Skills directory |
+|---|---|
+| `claude` | `~/.claude/skills/` |
+| `codex` | `~/.codex/skills/` |
+| `cursor` | `~/.cursor/skills/` |
+| `windsurf` | `~/.codeium/windsurf/skills/` |
+| `copilot` | `~/.copilot/skills/` |
+| `gemini` | `~/.gemini/skills/` |
+| `roo` | `~/.roo/skills/` |
+| `agents` | `~/.agents/skills/` |
 
 ---
 
-## CLI Help
+## Config File
 
-The CLI is primarily used by agents. The user tells the agent to use `skillsync`, and the agent runs `skillsync --help` to learn how to use it. The built-in help text should be clear and complete enough for any agent to self-serve.
+`~/.skillssync/config.json`:
 
-Expected `skillsync --help` output:
-
+```json
+{
+  "collections": [
+    {
+      "id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+      "name": "personal",
+      "backend": "gdrive",
+      "folderId": "1bZW0-Nic5D53dBwMH_h7JN_aB0W-Rqyq",
+      "registryFileId": "1yMuqe7JmelSYqm9TptKBWPk5ThTV5OJo"
+    }
+  ],
+  "discoveredAt": "2026-03-15T00:06:33.570Z"
+}
 ```
-SkillSync — discover, fetch, and manage agent skills from remote storage
 
-Usage: skillsync <command> [options]
-
-Commands:
-  init                          Log into GitHub/Google Drive, auto-discover registries
-  list                          Show all available skills across all registries
-  search <query>                Search skills by name or description
-  fetch <name> --agent <agent>  Download a skill and symlink to the agent's skills directory
-  add <path>                    Add a new local skill to a registry
-  update <name>                 Push changes to an existing skill back to remote
-  refresh                       Re-run registry discovery to pick up new registries
-
-Examples:
-  skillsync list                          Show all available skills
-  skillsync search "pdf"                  Find skills related to PDFs
-  skillsync fetch pdf-skill --agent claude   Download and link to ~/.claude/skills/
-  skillsync add ./my-new-skill            Upload a new skill to remote
-  skillsync update code-review            Push local changes to remote
-
-Skills are cached at ~/.skillssync/cache/ and symlinked to agent directories.
-All skill names are unique — just use the name, no paths needed.
-```
+- `id` — stable UUID for the cache path, never changes even if the collection is renamed
+- `name` — logical name (Drive prefix stripped)
+- `folderId` — Drive folder ID, used to match collections across refreshes to preserve UUIDs
+- `registryFileId` — Drive file ID of `SKILLS_SYNC.yaml`, cached to avoid re-searching on every read
 
 ---
 
-## CLI Design Principles
+## Storage Backend Architecture
 
-1. **Zero lock-in** — skills are plain Markdown files; the CLI just moves them around
-2. **Pluggable backends** — add new storage adapters without breaking existing ones
-3. **Agent-first** — same plain-text interface for humans and agents; `--help` is all an agent needs
-4. **Composable** — works with existing tools (git, aws cli, rclone) rather than replacing them
-5. **Protocol-first** — `SKILLS_SYNC.yaml` is the product; backends are swappable transport
+The `StorageBackend` interface is the only contract backends must implement:
+
+```typescript
+interface StorageBackend {
+  discoverCollections(): Promise<Omit<CollectionInfo, "id">[]>;
+  readCollection(collection: CollectionInfo): Promise<CollectionFile>;
+  writeCollection(collection: CollectionInfo, data: CollectionFile): Promise<void>;
+  downloadSkill(collection: CollectionInfo, skillName: string, destDir: string): Promise<void>;
+  uploadSkill(collection: CollectionInfo, localPath: string, skillName: string): Promise<void>;
+}
+```
+
+Note: `discoverCollections` returns without `id` — UUID assignment is handled by the config layer (`mergeCollections()`), not the backend. This keeps backends storage-agnostic.
+
+### Current backend: Google Drive
+
+- Discovery: searches for `SKILLS_SYNC.yaml` owned by the user across all of Drive
+- Download/upload: recursive folder operations via Drive API v3
+- Auth: OAuth2 Desktop app flow, user creates their own Google Cloud project
+
+### Future backends
+
+- **GitHub** — skills in a repo, `SKILLS_SYNC.yaml` at root, git-based sync
+- **S3 / R2** — private cloud storage
+- **Local / NFS** — offline or corporate environments
 
 ---
 
-## Tech Stack (MVP)
+## Tech Stack
 
-| Layer | Choice | Reason |
+| Layer | Choice |
+|---|---|
+| Language | TypeScript / Node.js (ESM, `"type": "module"`) |
+| CLI framework | `commander` |
+| Google Drive | `googleapis` npm package |
+| Terminal output | `chalk@4` + `ora@5` |
+| YAML | `yaml` |
+| Config | Plain JSON at `~/.skillssync/` |
+| Distribution | `npm install -g skillsync` |
+
+---
+
+## Design Decisions
+
+| Decision | Choice | Reason |
 |---|---|---|
-| Language | TypeScript / Node.js | Fast iteration, good SDK support for both backends |
-| CLI framework | `commander` | Lightweight, well-maintained |
-| GitHub backend | `simple-git` or shell out to `git` | Clone, pull, commit, push |
-| Google Drive backend | `googleapis` npm package | Official SDK, handles OAuth2 + Drive v3 |
-| Terminal output | `chalk` + `ora` | Colors and spinners for a clean CLI UX |
-| Config | Plain JSON files | Simple, no extra dependencies |
-| Distribution | `npm link` for now, standalone binary later | Gets us testing quickly |
-
----
-
-## MVP Scope
-
-For a first working version — both GitHub and Google Drive backends:
-
-1. `skillsync init` — log into GitHub + Google Drive, auto-discover all registries, cache index
-2. `skillsync list` — aggregated list of all skills across all discovered registries
-3. `skillsync search "<query>"` — search skills by name or description
-4. `skillsync fetch <name> --agent <agent>` — download a skill to cache and symlink to the agent's skills directory
-5. `skillsync add <path>` — add a new local skill to a registry and update its `SKILLS_SYNC.yaml`
-6. `skillsync update <name>` — push changes to an existing skill and update its `SKILLS_SYNC.yaml`
-7. `skillsync refresh` — re-run registry discovery to pick up new registries
-
-**What MVP intentionally defers:**
-- Conflict resolution for duplicate skill names across registries (first match wins for now)
-- Publishing / sharing collections publicly
-
-Everything deferred is additive.
-
----
-
-## Summary
-
-SkillsSync = a registry format (`SKILLS_SYNC.yaml`) + a client (`skillsync` CLI). The user logs in once with `skillsync init`, and the CLI automatically discovers all registries the user owns across GitHub and Google Drive. Agents see a single aggregated list of skills — they don't know or care which backend a skill lives in. `skillsync fetch` downloads to a local cache and symlinks to the calling agent's directory. The built-in `--help` is all an agent needs to learn the CLI.
+| CLI name | `skillsync` | Avoids conflicts with `sk`, `skills` |
+| Skill structure | Flat, globally unique names | No category nesting — simpler for agents to reference |
+| Registry file | `SKILLS_SYNC.yaml` | Human-readable, lives alongside skills in any storage |
+| Terminology | **Collection** not Registry | More natural for personal/shared skill sets |
+| Drive folder prefix | `SKILLSYNC_` | Distinguishes skillsync folders from regular Drive folders |
+| Logical name | Strip prefix in YAML + CLI | Users and agents work with clean names, not Drive conventions |
+| Cache path | `~/.skillssync/cache/<uuid>/` | UUID is backend-agnostic and stable across renames/migrations |
+| UUID assignment | Config layer (`mergeCollections`) | Backends don't need to know about UUIDs; preserved across refreshes by matching `folderId` |
+| Auth | Auto-launch OAuth if no token | No explicit `init` required; any command triggers login when needed |
+| Interactive prompts | Only in `setup google` | All other commands are non-interactive — safe for agent use |
+| Drive scope | Full `drive` | Required to discover pre-existing `SKILLS_SYNC.yaml` files not created by the app |
+| Google credentials | User creates own Cloud project | Avoids sharing a single OAuth app; each user controls their own credentials |
