@@ -1,20 +1,11 @@
 import fs from "fs";
 import path from "path";
-import readline from "readline";
 import chalk from "chalk";
 import ora from "ora";
 import YAML from "yaml";
-import { readConfig, writeConfig, CONFIG_PATH } from "../config.js";
+import { readConfig } from "../config.js";
 import { getAuthClient } from "../auth.js";
 import { GDriveBackend } from "../backends/gdrive.js";
-import type { Config } from "../types.js";
-
-function ask(question: string): Promise<string> {
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-  return new Promise((resolve) => {
-    rl.question(question, (ans) => { rl.close(); resolve(ans.trim()); });
-  });
-}
 
 export async function addCommand(
   skillPath: string,
@@ -49,35 +40,19 @@ export async function addCommand(
     return;
   }
 
-  let config: Config;
+  let config;
   try {
     config = readConfig();
   } catch {
-    config = { collections: [], discoveredAt: new Date().toISOString() };
+    console.log(chalk.red("No collections configured."));
+    console.log(chalk.dim("  Run: skillsync collection create <name>"));
+    return;
   }
 
   if (config.collections.length === 0) {
-    console.log(chalk.yellow("No collections found."));
-    const ans = await ask(`Create a new collection in Google Drive now? ${chalk.dim("[y/n]")} `);
-    if (!ans.toLowerCase().startsWith("y")) {
-      console.log(chalk.dim("Run 'skillsync collection create' to set one up."));
-      return;
-    }
-    const nameInput = await ask(`Collection name ${chalk.dim('(leave blank for "my-skills")')}: `);
-    const folderName = nameInput || "my-skills";
-
-    const auth = getAuthClient();
-    const backend = new GDriveBackend(auth);
-    const spinner = ora(`Creating collection "${folderName}" in Google Drive...`).start();
-    try {
-      const collection = await backend.createCollection(folderName);
-      spinner.succeed(`Collection "${folderName}" created`);
-      config.collections.push(collection);
-      writeConfig(config);
-    } catch (err) {
-      spinner.fail(`Failed to create collection: ${(err as Error).message}`);
-      return;
-    }
+    console.log(chalk.red("No collections found."));
+    console.log(chalk.dim("  Run: skillsync collection create <name>"));
+    return;
   }
 
   // Pick collection — first one by default, or by name

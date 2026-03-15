@@ -81,7 +81,7 @@ const collection = program
   .description("Manage collections");
 
 collection
-  .command("create")
+  .command("create <name>")
   .description("Create a new collection (Google Drive folder + SKILLS_SYNC.yaml)")
   .action(collectionCreateCommand);
 
