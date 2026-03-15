@@ -22,7 +22,7 @@ const supportedAgents = Object.keys(AGENT_PATHS).join(", ");
 program
   .name("skillsync")
   .description(
-    "SkillSync — discover, fetch, and manage agent skills from remote storage.\n\n" +
+    "SkillSync — discover, fetch, and manage agent skills from local or remote storage.\n\n" +
     "Common flows:\n\n" +
     "  Find and install a skill:\n" +
     "    skillsync search <query>                        # find skills by name or description\n" +
@@ -30,8 +30,13 @@ program
     "  Share a new skill:\n" +
     "    skillsync add <path>                            # upload a local skill directory\n\n" +
     "  Update a skill you have installed:\n" +
-    "    skillsync update <path>                         # push edits back to remote\n" +
+    "    skillsync update <path>                         # push edits back to storage\n" +
     "                                                    # (run skillsync fetch first on new machines)\n\n" +
+    "  Registry and collections:\n" +
+    "    skillsync registry list                         # show registries and collections\n" +
+    "    skillsync registry create                       # create a local registry\n" +
+    "    skillsync registry push --backend gdrive        # push local data to Google Drive\n" +
+    "    skillsync collection create [name]              # create a new collection\n\n" +
     "  Supported agents: " + supportedAgents + "\n\n" +
     "  Skill scope:\n" +
     "    --scope global   install to ~/.agent/skills/    (default, all projects)\n" +
@@ -39,7 +44,7 @@ program
     "  Install the skillsync skill for agents:\n" +
     "    skillsync install                               # install to all agents\n" +
     "    skillsync install --agent claude,codex          # install to specific agents\n\n" +
-    "  First-time setup (human only):\n" +
+    "  First-time setup (human only, needed for Google Drive):\n" +
     "    skillsync setup google                          # configure Google Drive credentials"
   )
   .version("0.1.0");
