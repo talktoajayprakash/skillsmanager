@@ -4,6 +4,7 @@ import chalk from "chalk";
 import ora from "ora";
 import YAML from "yaml";
 import { ensureReady } from "../ready.js";
+import { trackSkill } from "../config.js";
 
 export async function addCommand(
   skillPath: string,
@@ -65,6 +66,7 @@ export async function addCommand(
       col.skills.push({ name: skillName, path: `${skillName}/`, description });
     }
     await backend.writeCollection(collection, col);
+    trackSkill(skillName, collection.id);
 
     spinner.succeed(`${chalk.bold(skillName)} added to gdrive:${collection.name}`);
   } catch (err) {

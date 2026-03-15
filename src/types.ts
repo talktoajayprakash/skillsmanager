@@ -21,8 +21,13 @@ export interface CollectionInfo {
   registryFileId?: string; // Drive file ID of SKILLS_SYNC.yaml
 }
 
+export interface SkillIndex {
+  [skillName: string]: { collectionId: string };
+}
+
 export interface Config {
   collections: CollectionInfo[];
+  skills: SkillIndex;
   discoveredAt: string;
 }
 

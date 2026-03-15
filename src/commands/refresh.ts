@@ -15,7 +15,7 @@ export async function refreshCommand(): Promise<void> {
     try { existing = readConfig().collections; } catch { /* no existing config */ }
     const collections = mergeCollections(fresh, existing);
 
-    writeConfig({ collections, discoveredAt: new Date().toISOString() });
+    writeConfig({ collections, skills: {}, discoveredAt: new Date().toISOString() });
     spinner.stop();
 
     if (collections.length === 0) {

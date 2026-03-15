@@ -110,7 +110,51 @@ skillsync fetch my-skill --agent claude --scope project
 
 ---
 
+---
+
+## Flow 3 — Update a skill
+
+**Scenario:** Agent edited a skill at a known path and wants to push the
+changes back to the remote collection.
+
+```bash
+skillsync update <path>
+skillsync update <path> --collection <name>   # override if needed
+```
+
+### How skillsync knows which collection to update
+
+SkillSync tracks every skill it has ever `add`ed or `fetch`ed in a local
+index stored in `~/.skillssync/config.json` under a `skills` key:
+
+```json
+{
+  "collections": [...],
+  "skills": {
+    "write_linkedin_post": { "collectionId": "f47ac10b-..." },
+    "code-review":         { "collectionId": "f47ac10b-..." }
+  }
+}
+```
+
+- Written by `add` after uploading a skill
+- Written by `fetch` after downloading a skill
+- Read by `update` to find the collection without any remote search
+
+### Update flow
+1. Read skill name from `SKILL.md` frontmatter at the given path
+2. Look up skill name in the local `skills` index → get `collectionId`
+3. Find the `CollectionInfo` in `collections` by `id`
+4. Upload changed files to Drive
+5. Update description in `SKILLS_SYNC.yaml` if it changed
+
+### Error cases
+- Skill not in local index → `Skill not tracked. Use: skillsync add <path>`
+- Collection for that skill no longer in config → `Collection not found. Run: skillsync refresh`
+- `--collection <name>` provided → override the index lookup
+
+---
+
 ## Not in scope for now
-- Detecting if a skill in the agent directory is "already synced" (no-op vs re-upload)
 - Conflict resolution if remote and local have diverged
 - `skillsync add --all --agent claude` (bulk add all unsynced local skills)

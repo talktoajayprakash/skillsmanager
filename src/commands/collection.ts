@@ -24,7 +24,7 @@ export async function collectionCreateCommand(name?: string): Promise<void> {
     const collection = await backend.createCollection(folderName);
     spinner.succeed(`Collection "${folderName}" created in Google Drive`);
 
-    let config: Config = { collections: [], discoveredAt: new Date().toISOString() };
+    let config: Config = { collections: [], skills: {}, discoveredAt: new Date().toISOString() };
     if (fs.existsSync(CONFIG_PATH)) {
       try { config = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf-8")) as Config; } catch { /* use default */ }
     }

@@ -29,10 +29,16 @@ export function readConfig(): Config {
   }
   // Backwards compat: assign stable UUIDs to collections missing an id
   const collections = raw.collections as CollectionInfo[];
+  let needsWrite = false;
   if (Array.isArray(collections)) {
-    collections.forEach((c) => { if (!c.id) c.id = randomUUID(); });
+    collections.forEach((c) => { if (!c.id) { c.id = randomUUID(); needsWrite = true; } });
   }
-  return raw as unknown as Config;
+  // Backwards compat: old configs have no skills index
+  if (!raw.skills) { raw.skills = {}; needsWrite = true; }
+  const config = raw as unknown as Config;
+  // Persist any backfilled values so they are stable on subsequent reads
+  if (needsWrite) fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2));
+  return config;
 }
 
 /**
@@ -48,6 +54,14 @@ export function mergeCollections(
     const prev = existing.find((e) => e.folderId === c.folderId);
     return { ...c, id: prev?.id ?? randomUUID() };
   });
+}
+
+export function trackSkill(skillName: string, collectionId: string): void {
+  let config: Config;
+  try { config = readConfig(); } catch { config = { collections: [], skills: {}, discoveredAt: new Date().toISOString() }; }
+  if (!config.skills) config.skills = {};
+  config.skills[skillName] = { collectionId };
+  writeConfig(config);
 }
 
 export function writeConfig(config: Config): void {

@@ -65,9 +65,12 @@ program
   );
 
 program
-  .command("update <name>")
-  .description("Push changes to an existing skill back to remote")
-  .action(updateCommand);
+  .command("update <path>")
+  .description("Push local changes to a skill back to remote")
+  .option("--collection <name>", "Override which collection to update")
+  .action((skillPath: string, options: { collection?: string }) =>
+    updateCommand(skillPath, options)
+  );
 
 program
   .command("refresh")
