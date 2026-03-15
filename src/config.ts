@@ -27,6 +27,11 @@ export function readConfig(): Config {
   if (raw.registries && !raw.collections) {
     raw.collections = raw.registries;
   }
+  // Backwards compat: assign stable UUIDs to collections missing an id
+  const collections = raw.collections as CollectionInfo[];
+  if (Array.isArray(collections)) {
+    collections.forEach((c) => { if (!c.id) c.id = randomUUID(); });
+  }
   return raw as unknown as Config;
 }
 
