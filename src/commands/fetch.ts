@@ -1,5 +1,6 @@
 import chalk from "chalk";
 import ora from "ora";
+import path from "path";
 import { getCachePath, ensureCachePath, createSymlink, type Scope } from "../cache.js";
 import { ensureReady } from "../ready.js";
 import { trackSkill } from "../config.js";
@@ -42,8 +43,8 @@ export async function fetchCommand(
       const cachePath = getCachePath(match.collection, name);
 
       await backend.downloadSkill(match.collection, name, cachePath);
-      trackSkill(name, match.collection.id);
       const { skillsDir, created } = createSymlink(name, cachePath, options.agent, scope, cwd);
+      trackSkill(name, match.collection.id, path.join(skillsDir, name));
 
       spinner.succeed(
         `${chalk.bold(name)} → ${scope === "project" ? "project" : "global"} ${options.agent} skills`

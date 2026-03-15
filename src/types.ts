@@ -21,8 +21,13 @@ export interface CollectionInfo {
   registryFileId?: string; // Drive file ID of SKILLS_SYNC.yaml
 }
 
+export interface SkillLocation {
+  collectionId: string;
+  installedAt: string[]; // absolute paths where this skill has been installed
+}
+
 export interface SkillIndex {
-  [skillName: string]: { collectionId: string };
+  [skillName: string]: SkillLocation[];
 }
 
 export interface Config {

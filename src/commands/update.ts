@@ -38,23 +38,38 @@ export async function updateCommand(
 
   const { config, backend } = await ensureReady();
 
-  // Find the collection — from index, or --collection override
-  let collection = config.collections.find((c) => c.name === options.collection) ??
-    (() => {
-      const entry = config.skills?.[skillName];
-      if (!entry) return null;
-      return config.collections.find((c) => c.id === entry.collectionId) ?? null;
-    })();
+  // Find the collection — --collection override, or look up by installedAt path, or by name
+  let collection = config.collections.find((c) => c.name === options.collection) ?? null;
 
   if (!collection) {
-    if (options.collection) {
-      console.log(chalk.red(`Collection "${options.collection}" not found.`));
-      console.log(chalk.dim(`  Available: ${config.collections.map((c) => c.name).join(", ")}`));
-    } else {
-      console.log(chalk.red(`Skill "${skillName}" is not tracked by skillsync.`));
-      console.log(chalk.dim(`  Use: skillsync add ${skillPath}`));
+    const entries = config.skills?.[skillName] ?? [];
+
+    // Prefer the entry whose installedAt includes this exact path
+    const byPath = entries.find((e) => e.installedAt.includes(absPath));
+    // Fall back to the only entry if unambiguous
+    const byName = entries.length === 1 ? entries[0] : null;
+    const entry = byPath ?? byName;
+
+    if (!entry) {
+      if (entries.length > 1) {
+        const names = entries.map((e) => {
+          const col = config.collections.find((c) => c.id === e.collectionId);
+          return col?.name ?? e.collectionId;
+        }).join(", ");
+        console.log(chalk.red(`"${skillName}" exists in multiple collections: ${names}`));
+        console.log(chalk.dim(`  Use: skillsync update ${skillPath} --collection <name>`));
+      } else {
+        console.log(chalk.red(`Skill "${skillName}" is not tracked by skillsync.`));
+        console.log(chalk.dim(`  Use: skillsync add ${skillPath}`));
+      }
+      return;
     }
-    return;
+
+    collection = config.collections.find((c) => c.id === entry.collectionId) ?? null;
+    if (!collection) {
+      console.log(chalk.red(`Collection not found. Run: skillsync refresh`));
+      return;
+    }
   }
 
   const spinner = ora(`Updating ${chalk.bold(skillName)} in gdrive:${collection.name}...`).start();

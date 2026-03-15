@@ -2,7 +2,7 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 import { randomUUID } from "crypto";
-import type { Config, CollectionInfo } from "./types.js";
+import type { Config, CollectionInfo, SkillLocation } from "./types.js";
 
 export const CONFIG_DIR = path.join(os.homedir(), ".skillssync");
 export const CREDENTIALS_PATH = path.join(CONFIG_DIR, "credentials.json");
@@ -35,6 +35,15 @@ export function readConfig(): Config {
   }
   // Backwards compat: old configs have no skills index
   if (!raw.skills) { raw.skills = {}; needsWrite = true; }
+  // Backwards compat: old skills index used flat { collectionId } instead of array
+  const skills = raw.skills as Record<string, unknown>;
+  for (const key of Object.keys(skills)) {
+    const val = skills[key];
+    if (!Array.isArray(val)) {
+      skills[key] = [{ collectionId: (val as { collectionId: string }).collectionId, installedAt: [] }];
+      needsWrite = true;
+    }
+  }
   const config = raw as unknown as Config;
   // Persist any backfilled values so they are stable on subsequent reads
   if (needsWrite) fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2));
@@ -56,11 +65,24 @@ export function mergeCollections(
   });
 }
 
-export function trackSkill(skillName: string, collectionId: string): void {
+export function trackSkill(skillName: string, collectionId: string, installedPath?: string): void {
   let config: Config;
   try { config = readConfig(); } catch { config = { collections: [], skills: {}, discoveredAt: new Date().toISOString() }; }
   if (!config.skills) config.skills = {};
-  config.skills[skillName] = { collectionId };
+
+  const entries: SkillLocation[] = config.skills[skillName] ?? [];
+
+  // Find existing entry for this collection
+  const existing = entries.find((e) => e.collectionId === collectionId);
+  if (existing) {
+    if (installedPath && !existing.installedAt.includes(installedPath)) {
+      existing.installedAt.push(installedPath);
+    }
+  } else {
+    entries.push({ collectionId, installedAt: installedPath ? [installedPath] : [] });
+  }
+
+  config.skills[skillName] = entries;
   writeConfig(config);
 }
 

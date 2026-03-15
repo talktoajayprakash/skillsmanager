@@ -66,7 +66,7 @@ export async function addCommand(
       col.skills.push({ name: skillName, path: `${skillName}/`, description });
     }
     await backend.writeCollection(collection, col);
-    trackSkill(skillName, collection.id);
+    trackSkill(skillName, collection.id, absPath);
 
     spinner.succeed(`${chalk.bold(skillName)} added to gdrive:${collection.name}`);
   } catch (err) {
