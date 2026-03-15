@@ -60,8 +60,8 @@ export async function updateCommand(
         console.log(chalk.red(`"${skillName}" exists in multiple collections: ${names}`));
         console.log(chalk.dim(`  Use: skillsync update ${skillPath} --collection <name>`));
       } else {
-        console.log(chalk.red(`Skill "${skillName}" is not tracked by skillsync.`));
-        console.log(chalk.dim(`  Use: skillsync add ${skillPath}`));
+        console.log(chalk.red(`Skill "${skillName}" is not tracked in the skills index.`));
+        console.log(chalk.dim(`  Run: skillsync fetch ${skillName} --agent <agent> first.`));
       }
       return;
     }
