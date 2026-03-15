@@ -47,8 +47,9 @@ export class GDriveBackend implements StorageBackend {
           fields: "id, name",
         });
 
+        const rawName = parent.data.name ?? "unknown";
         collections.push({
-          name: parent.data.name ?? "unknown",
+          name: rawName.replace(/^SKILLSYNC_/i, ""),
           backend: "gdrive",
           folderId: parentId,
           registryFileId: file.id ?? undefined,
@@ -190,7 +191,9 @@ export class GDriveBackend implements StorageBackend {
     const folderId = folderRes.data.id!;
 
     const owner = await this.getOwnerEmail();
-    const emptyCollection: CollectionFile = { name: folderName, owner, skills: [] };
+    // Strip the SKILLSYNC_ prefix for the logical name stored in the YAML
+    const logicalName = folderName.replace(/^SKILLSYNC_/i, "");
+    const emptyCollection: CollectionFile = { name: logicalName, owner, skills: [] };
     const content = serializeRegistry(emptyCollection);
     const fileRes = await this.drive.files.create({
       requestBody: {
@@ -202,7 +205,7 @@ export class GDriveBackend implements StorageBackend {
     });
 
     return {
-      name: folderName,
+      name: logicalName,
       backend: "gdrive",
       folderId,
       registryFileId: fileRes.data.id ?? undefined,
