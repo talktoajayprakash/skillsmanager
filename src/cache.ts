@@ -5,7 +5,7 @@ import { AGENT_PATHS } from "./types.js";
 import type { CollectionInfo } from "./types.js";
 
 export function getCachePath(collection: CollectionInfo, skillName?: string): string {
-  const base = path.join(CACHE_DIR, "gdrive", collection.folderId);
+  const base = path.join(CACHE_DIR, collection.name);
   return skillName ? path.join(base, skillName) : base;
 }
 
