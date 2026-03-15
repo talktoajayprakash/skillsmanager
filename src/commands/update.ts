@@ -4,6 +4,7 @@ import fs from "fs";
 import YAML from "yaml";
 import path from "path";
 import { ensureReady } from "../ready.js";
+import { getCachePath, ensureCachePath } from "../cache.js";
 
 export async function updateCommand(
   skillPath: string,
@@ -76,6 +77,11 @@ export async function updateCommand(
 
   try {
     await backend.uploadSkill(collection, absPath, skillName);
+
+    // Sync updated files into the local cache so symlinks reflect the change immediately
+    ensureCachePath(collection);
+    const cachePath = getCachePath(collection, skillName);
+    await backend.downloadSkill(collection, skillName, cachePath);
 
     // Update description in SKILLS_SYNC.yaml if it changed
     if (frontmatter.description) {
