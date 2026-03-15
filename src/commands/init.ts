@@ -29,7 +29,8 @@ export async function initCommand(): Promise<void> {
     }
   }
 
-  writeConfig({ collections, skills: {}, discoveredAt: new Date().toISOString() });
+  let existingSkills = {}; try { existingSkills = readConfig().skills ?? {}; } catch { /* ok */ }
+  writeConfig({ collections, skills: existingSkills, discoveredAt: new Date().toISOString() });
 
   const totalSkills = (
     await Promise.all(collections.map((c) => backend.readCollection(c)))
