@@ -78,6 +78,12 @@ skillsmanager registry add-collection <name>
 # Push local registry and collections to Google Drive
 skillsmanager registry push --backend gdrive
 
+# Remove a collection reference from the registry (keeps data)
+skillsmanager registry remove-collection <name>
+
+# Remove and permanently delete the collection and all its skills
+skillsmanager registry remove-collection <name> --delete
+
 # Create a new collection
 skillsmanager collection create [name]
 
@@ -124,6 +130,10 @@ skillsmanager uninstall
 
 **User wants to see what registries and collections exist:**
 1. `skillsmanager registry list`
+
+**User wants to remove a collection:**
+1. `skillsmanager registry remove-collection <name>` (removes reference only, data is kept)
+2. `skillsmanager registry remove-collection <name> --delete` (permanently deletes collection and skills)
 
 ## Architecture
 

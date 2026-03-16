@@ -230,6 +230,14 @@ export class GDriveBackend implements StorageBackend {
     };
   }
 
+  async deleteCollection(collection: CollectionInfo): Promise<void> {
+    // Trash the collection folder on Drive (moves to trash, not permanent delete)
+    await this.drive.files.update({
+      fileId: collection.folderId,
+      requestBody: { trashed: true },
+    });
+  }
+
   async uploadSkill(
     collection: CollectionInfo,
     localPath: string,

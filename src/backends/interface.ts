@@ -11,6 +11,8 @@ export interface StorageBackend {
   downloadSkill(collection: CollectionInfo, skillName: string, destDir: string): Promise<void>;
   uploadSkill(collection: CollectionInfo, localPath: string, skillName: string): Promise<void>;
 
+  deleteCollection(collection: CollectionInfo): Promise<void>;
+
   // ── Registry operations (new) ────────────────────────────────────────────
   discoverRegistries(): Promise<Omit<RegistryInfo, "id">[]>;
   readRegistry(registry: RegistryInfo): Promise<RegistryFile>;

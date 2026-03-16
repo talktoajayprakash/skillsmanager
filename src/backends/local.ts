@@ -93,6 +93,12 @@ export class LocalBackend implements StorageBackend {
     copyDirSync(localPath, dest);
   }
 
+  async deleteCollection(collection: CollectionInfo): Promise<void> {
+    if (fs.existsSync(collection.folderId)) {
+      fs.rmSync(collection.folderId, { recursive: true, force: true });
+    }
+  }
+
   // ── Registry operations ──────────────────────────────────────────────────
 
   async discoverRegistries(): Promise<Omit<RegistryInfo, "id">[]> {

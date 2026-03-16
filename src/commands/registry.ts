@@ -1,7 +1,7 @@
 import chalk from "chalk";
 import ora from "ora";
 import fs from "fs";
-import { readConfig, writeConfig, mergeRegistries, CONFIG_PATH } from "../config.js";
+import { readConfig, writeConfig, mergeRegistries, CONFIG_PATH, CACHE_DIR } from "../config.js";
 import { ensureAuth } from "../auth.js";
 import { GDriveBackend } from "../backends/gdrive.js";
 import { LocalBackend } from "../backends/local.js";
@@ -155,7 +155,10 @@ export async function registryAddCollectionCommand(
   console.log(chalk.green(`Added "${collectionName}" to registry "${reg.name}".`));
 }
 
-export async function registryRemoveCollectionCommand(collectionName: string): Promise<void> {
+export async function registryRemoveCollectionCommand(
+  collectionName: string,
+  options: { delete?: boolean }
+): Promise<void> {
   let config: Config;
   try { config = readConfig(); } catch {
     console.log(chalk.red("No config found."));
@@ -173,20 +176,63 @@ export async function registryRemoveCollectionCommand(collectionName: string): P
     : new LocalBackend();
 
   const data = await backend.readRegistry(reg);
-  const idx = data.collections.findIndex((c) => c.name === collectionName);
-  if (idx < 0) {
+  const ref = data.collections.find((c) => c.name === collectionName);
+  if (!ref) {
     console.log(chalk.yellow(`Collection "${collectionName}" not found in registry.`));
     return;
   }
 
-  data.collections.splice(idx, 1);
+  // If --delete, delete the actual collection and skills from the backend
+  if (options.delete) {
+    const collectionInConfig = config.collections.find((c) => c.name === collectionName);
+    if (collectionInConfig) {
+      const collBackend = collectionInConfig.backend === "gdrive"
+        ? new GDriveBackend(await ensureAuth())
+        : new LocalBackend();
+
+      const spinner = ora(`Deleting collection "${collectionName}" from ${collectionInConfig.backend}...`).start();
+      try {
+        await collBackend.deleteCollection(collectionInConfig);
+        spinner.succeed(`Deleted collection "${collectionName}" from ${collectionInConfig.backend}`);
+      } catch (err) {
+        spinner.fail(`Failed to delete: ${(err as Error).message}`);
+        return;
+      }
+    }
+
+    // Clean up local cache
+    if (collectionInConfig) {
+      const cachePath = path.join(CACHE_DIR, collectionInConfig.id);
+      if (fs.existsSync(cachePath)) {
+        fs.rmSync(cachePath, { recursive: true, force: true });
+      }
+    }
+  }
+
+  // Remove ref from registry
+  data.collections = data.collections.filter((c) => c.name !== collectionName);
   await backend.writeRegistry(reg, data);
 
-  // Also remove from local config collections
+  // Remove from local config — capture ID before removal for skills cleanup
+  const removedColId = config.collections.find((c) => c.name === collectionName)?.id;
   config.collections = config.collections.filter((c) => c.name !== collectionName);
+
+  // Remove skills index entries for this collection
+  if (removedColId) {
+    for (const [skillName, locations] of Object.entries(config.skills)) {
+      config.skills[skillName] = locations.filter((l) => l.collectionId !== removedColId);
+      if (config.skills[skillName].length === 0) delete config.skills[skillName];
+    }
+  }
+
   writeConfig(config);
 
-  console.log(chalk.green(`Removed "${collectionName}" from registry "${reg.name}".`));
+  if (options.delete) {
+    console.log(chalk.green(`Removed and deleted "${collectionName}" from registry "${reg.name}".`));
+  } else {
+    console.log(chalk.green(`Removed "${collectionName}" from registry "${reg.name}".`));
+    console.log(chalk.dim(`  Collection data was kept. Use --delete to permanently remove it.`));
+  }
 }
 
 export async function registryPushCommand(options: { backend?: string }): Promise<void> {

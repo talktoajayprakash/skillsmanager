@@ -141,7 +141,10 @@ registry
 registry
   .command("remove-collection <name>")
   .description("Remove a collection reference from the registry")
-  .action((name: string) => registryRemoveCollectionCommand(name));
+  .option("--delete", "Also delete the collection and all its skills from the backend")
+  .action((name: string, options: { delete?: boolean }) =>
+    registryRemoveCollectionCommand(name, options)
+  );
 
 registry
   .command("push")
