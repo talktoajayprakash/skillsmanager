@@ -5,7 +5,7 @@ import { readConfig, writeConfig, mergeRegistries, CONFIG_PATH } from "../config
 import { ensureAuth } from "../auth.js";
 import { GDriveBackend } from "../backends/gdrive.js";
 import { LocalBackend } from "../backends/local.js";
-import type { Config, RegistryInfo } from "../types.js";
+import type { CollectionInfo, Config, RegistryInfo } from "../types.js";
 
 export async function registryCreateCommand(options: { backend?: string }): Promise<void> {
   const backend = options.backend ?? "local";
@@ -188,59 +188,89 @@ export async function registryPushCommand(options: { backend?: string }): Promis
   const auth = await ensureAuth();
   const gdrive = new GDriveBackend(auth);
 
-  // Discover or create gdrive registry
+  // ── Phase 1: Upload all collections (no state changes yet) ─────────────
+  // If any collection fails, we abort and nothing is committed.
+
+  const spinner = ora("Pushing collections to Google Drive...").start();
+
+  // Discover or create gdrive registry (this is safe — an empty registry is harmless)
   let gdriveReg = config.registries.find((r) => r.backend === "gdrive");
   if (!gdriveReg) {
-    const spinner = ora("Creating registry in Google Drive...").start();
+    spinner.text = "Creating registry in Google Drive...";
     gdriveReg = await gdrive.createRegistry();
-    config.registries.push(gdriveReg);
-    spinner.succeed("Created registry in Google Drive");
   }
 
-  // Push each local collection to gdrive
-  for (const ref of localCollectionRefs) {
-    const spinner = ora(`Pushing collection "${ref.name}" to Google Drive...`).start();
-    try {
+  // Accumulate results — only commit if ALL succeed
+  const pushed: { ref: typeof localCollectionRefs[0]; driveCol: CollectionInfo; folderName: string }[] = [];
+
+  try {
+    for (const ref of localCollectionRefs) {
+      spinner.text = `Uploading collection "${ref.name}"...`;
+
       const collInfo = await local.resolveCollectionRef(ref);
       if (!collInfo) {
-        spinner.fail(`Collection "${ref.name}" not found locally`);
-        continue;
+        throw new Error(`Collection "${ref.name}" not found locally`);
       }
 
-      // Create the collection folder on Drive
       const PREFIX = "SKILLSYNC_";
       const folderName = `${PREFIX}${ref.name.toUpperCase()}`;
       const driveCol = await gdrive.createCollection(folderName);
 
-      // Read local collection data and upload skills
       const colData = await local.readCollection({ ...collInfo, id: "temp" });
       for (const skill of colData.skills) {
         const localSkillPath = path.join(collInfo.folderId, skill.name);
         if (fs.existsSync(localSkillPath)) {
+          spinner.text = `Uploading ${ref.name}/${skill.name}...`;
           await gdrive.uploadSkill(driveCol, localSkillPath, skill.name);
         }
       }
       await gdrive.writeCollection(driveCol, colData);
 
-      // Update config with the new gdrive collection
-      config.collections.push(driveCol);
-
-      // Update the registry ref to point to gdrive
-      const gdriveData = await gdrive.readRegistry(gdriveReg!);
-      gdriveData.collections.push({
-        name: ref.name,
-        backend: "gdrive",
-        ref: folderName,
-      });
-      await gdrive.writeRegistry(gdriveReg!, gdriveData);
-
-      spinner.succeed(`Pushed "${ref.name}" to Google Drive`);
-    } catch (err) {
-      spinner.fail(`Failed to push "${ref.name}": ${(err as Error).message}`);
+      pushed.push({ ref, driveCol, folderName });
     }
+  } catch (err) {
+    spinner.fail(`Push failed: ${(err as Error).message}`);
+    console.log(chalk.dim("  No changes were committed. Local state is unchanged."));
+    return;
   }
 
-  writeConfig(config);
+  // ── Phase 2: Commit — update registry and config atomically ────────────
+
+  spinner.text = "Updating registry...";
+
+  try {
+    // Read current gdrive registry (may already have entries)
+    let gdriveData: import("../types.js").RegistryFile;
+    try {
+      gdriveData = await gdrive.readRegistry(gdriveReg);
+    } catch {
+      gdriveData = { name: gdriveReg.name, owner: await gdrive.getOwner(), source: "gdrive", collections: [] };
+    }
+
+    // Add all pushed collections at once
+    for (const { ref, folderName } of pushed) {
+      gdriveData.collections.push({ name: ref.name, backend: "gdrive", ref: folderName });
+    }
+    await gdrive.writeRegistry(gdriveReg, gdriveData);
+
+    // Update local config
+    if (!config.registries.find((r) => r.id === gdriveReg!.id)) {
+      config.registries.push(gdriveReg);
+    }
+    for (const { driveCol } of pushed) {
+      config.collections.push(driveCol);
+    }
+    writeConfig(config);
+
+    spinner.succeed(`Pushed ${pushed.length} collection(s) to Google Drive`);
+    for (const { ref } of pushed) {
+      console.log(chalk.dim(`  ${ref.name} → gdrive`));
+    }
+  } catch (err) {
+    spinner.fail(`Failed to update registry: ${(err as Error).message}`);
+    console.log(chalk.dim("  Collections were uploaded but the registry was not updated."));
+    console.log(chalk.dim("  Run 'skillsync registry push' again to retry."));
+  }
 }
 
 // Need path import for push command
