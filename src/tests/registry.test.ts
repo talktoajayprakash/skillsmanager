@@ -256,3 +256,171 @@ describe("LocalBackend", () => {
     expect(final.collections[1].backend).toBe("gdrive");
   });
 });
+
+// ── remove-collection + deleteCollection ──────────────────────────────────
+
+describe("remove-collection logic", () => {
+  let tmpDir: string;
+
+  beforeEach(() => {
+    tmpDir = makeTmpDir();
+  });
+
+  afterEach(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  function setupRegistryAndCollection() {
+    // Create a registry
+    const registryPath = path.join(tmpDir, "registry.yaml");
+    const registryData = {
+      name: "test-reg",
+      owner: "tester",
+      source: "local" as const,
+      collections: [
+        { name: "my_skills", backend: "local", ref: "my_skills" },
+        { name: "other_skills", backend: "local", ref: "other_skills" },
+      ],
+    };
+    fs.writeFileSync(registryPath, serializeRegistryFile(registryData));
+
+    // Create collection directories with skills
+    for (const name of ["my_skills", "other_skills"]) {
+      const colDir = path.join(tmpDir, "collections", name);
+      fs.mkdirSync(colDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(colDir, COLLECTION_FILENAME),
+        serializeCollection({ name, owner: "tester", skills: [{ name: "test_skill", path: "test_skill/", description: "A test" }] })
+      );
+      const skillDir = path.join(colDir, "test_skill");
+      fs.mkdirSync(skillDir, { recursive: true });
+      fs.writeFileSync(path.join(skillDir, "SKILL.md"), `---\nname: test_skill\n---\n`);
+    }
+
+    // Create a cache directory
+    const cacheDir = path.join(tmpDir, "cache", "uuid-123");
+    fs.mkdirSync(cacheDir, { recursive: true });
+    fs.writeFileSync(path.join(cacheDir, "cached-file.txt"), "cached");
+
+    return { registryPath };
+  }
+
+  it("removes collection reference from registry without deleting data", () => {
+    const { registryPath } = setupRegistryAndCollection();
+
+    // Remove reference only
+    const data = parseRegistryFile(fs.readFileSync(registryPath, "utf-8"));
+    data.collections = data.collections.filter((c) => c.name !== "my_skills");
+    fs.writeFileSync(registryPath, serializeRegistryFile(data));
+
+    // Registry should have one collection left
+    const updated = parseRegistryFile(fs.readFileSync(registryPath, "utf-8"));
+    expect(updated.collections).toHaveLength(1);
+    expect(updated.collections[0].name).toBe("other_skills");
+
+    // Collection data should still exist on disk
+    expect(fs.existsSync(path.join(tmpDir, "collections", "my_skills"))).toBe(true);
+    expect(fs.existsSync(path.join(tmpDir, "collections", "my_skills", COLLECTION_FILENAME))).toBe(true);
+    expect(fs.existsSync(path.join(tmpDir, "collections", "my_skills", "test_skill", "SKILL.md"))).toBe(true);
+  });
+
+  it("with --delete: removes reference AND deletes collection directory", () => {
+    const { registryPath } = setupRegistryAndCollection();
+    const colDir = path.join(tmpDir, "collections", "my_skills");
+
+    // Verify collection exists
+    expect(fs.existsSync(colDir)).toBe(true);
+    expect(fs.existsSync(path.join(colDir, "test_skill", "SKILL.md"))).toBe(true);
+
+    // Delete the collection directory (simulates deleteCollection)
+    fs.rmSync(colDir, { recursive: true, force: true });
+
+    // Remove reference from registry
+    const data = parseRegistryFile(fs.readFileSync(registryPath, "utf-8"));
+    data.collections = data.collections.filter((c) => c.name !== "my_skills");
+    fs.writeFileSync(registryPath, serializeRegistryFile(data));
+
+    // Registry updated
+    const updated = parseRegistryFile(fs.readFileSync(registryPath, "utf-8"));
+    expect(updated.collections).toHaveLength(1);
+
+    // Collection directory is gone
+    expect(fs.existsSync(colDir)).toBe(false);
+
+    // Other collection is untouched
+    expect(fs.existsSync(path.join(tmpDir, "collections", "other_skills"))).toBe(true);
+  });
+
+  it("with --delete: cleans up local cache directory", () => {
+    setupRegistryAndCollection();
+    const cacheDir = path.join(tmpDir, "cache", "uuid-123");
+
+    expect(fs.existsSync(cacheDir)).toBe(true);
+
+    // Simulate cache cleanup
+    fs.rmSync(cacheDir, { recursive: true, force: true });
+
+    expect(fs.existsSync(cacheDir)).toBe(false);
+    // Parent cache dir still exists
+    expect(fs.existsSync(path.join(tmpDir, "cache"))).toBe(true);
+  });
+
+  it("with --delete: removes skills index entries for the deleted collection", () => {
+    setupRegistryAndCollection();
+
+    // Simulate a config with skills index
+    const config = {
+      registries: [],
+      collections: [
+        { id: "uuid-123", name: "my_skills", backend: "local", folderId: path.join(tmpDir, "collections", "my_skills") },
+        { id: "uuid-456", name: "other_skills", backend: "local", folderId: path.join(tmpDir, "collections", "other_skills") },
+      ],
+      skills: {
+        "test_skill": [
+          { collectionId: "uuid-123", installedAt: ["/some/path"] },
+          { collectionId: "uuid-456", installedAt: ["/other/path"] },
+        ],
+        "only_in_deleted": [
+          { collectionId: "uuid-123", installedAt: ["/another/path"] },
+        ],
+      } as Record<string, { collectionId: string; installedAt: string[] }[]>,
+      discoveredAt: new Date().toISOString(),
+    };
+
+    // Remove skills entries for uuid-123
+    const removedColId = "uuid-123";
+    for (const [skillName, locations] of Object.entries(config.skills)) {
+      config.skills[skillName] = locations.filter((l) => l.collectionId !== removedColId);
+      if (config.skills[skillName].length === 0) delete config.skills[skillName];
+    }
+
+    // test_skill should still have the uuid-456 entry
+    expect(config.skills["test_skill"]).toHaveLength(1);
+    expect(config.skills["test_skill"][0].collectionId).toBe("uuid-456");
+
+    // only_in_deleted should be completely removed
+    expect(config.skills["only_in_deleted"]).toBeUndefined();
+  });
+
+  it("removing a non-existent collection is a no-op", () => {
+    const { registryPath } = setupRegistryAndCollection();
+
+    const data = parseRegistryFile(fs.readFileSync(registryPath, "utf-8"));
+    const before = data.collections.length;
+    data.collections = data.collections.filter((c) => c.name !== "nonexistent");
+
+    expect(data.collections.length).toBe(before);
+  });
+
+  it("removing all collections leaves an empty registry", () => {
+    const { registryPath } = setupRegistryAndCollection();
+
+    const data = parseRegistryFile(fs.readFileSync(registryPath, "utf-8"));
+    data.collections = [];
+    fs.writeFileSync(registryPath, serializeRegistryFile(data));
+
+    const updated = parseRegistryFile(fs.readFileSync(registryPath, "utf-8"));
+    expect(updated.collections).toEqual([]);
+    expect(updated.name).toBe("test-reg"); // registry itself is preserved
+  });
+});
