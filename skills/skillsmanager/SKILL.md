@@ -1,16 +1,16 @@
 ---
-name: skillsync
-description: Discover, fetch, add, and update agent skills from local or remote storage using the skillsync CLI
+name: skillsmanager
+description: Discover, fetch, add, and update agent skills from local or remote storage using the skillsmanager CLI
 ---
 
-# SkillSync
+# Skills Manager
 
-SkillSync is a CLI tool for managing agent skills stored locally or in remote storage (Google Drive). Use it to find, install, share, and update skills. Works offline by default — no setup needed for local use.
+Skills Manager is a CLI tool for managing agent skills stored locally or in remote storage (Google Drive). Use it to find, install, share, and update skills. Works offline by default — no setup needed for local use.
 
 ## Prerequisites
 
 - Local storage works out of the box — no setup needed.
-- For Google Drive: a human must run `skillsync setup google` once to configure credentials.
+- For Google Drive: a human must run `skillsmanager setup google` once to configure credentials.
 - All commands except `setup google` are non-interactive and designed for agent use.
 
 ## Commands
@@ -19,16 +19,16 @@ SkillSync is a CLI tool for managing agent skills stored locally or in remote st
 
 ```bash
 # Search by name or description (BM25 ranked — partial/reordered terms work)
-skillsync search <query>
+skillsmanager search <query>
 
 # Download and install for this agent
-skillsync fetch <name> --agent <agent>
+skillsmanager fetch <name> --agent <agent>
 
 # Install to current project only (instead of global)
-skillsync fetch <name> --agent <agent> --scope project
+skillsmanager fetch <name> --agent <agent> --scope project
 
 # List all available skills across all collections
-skillsync list
+skillsmanager list
 ```
 
 Supported agents: `claude`, `codex`, `agents`, `cursor`, `windsurf`, `copilot`, `gemini`, `roo`
@@ -38,10 +38,10 @@ Supported agents: `claude`, `codex`, `agents`, `cursor`, `windsurf`, `copilot`, 
 ```bash
 # Upload a local skill directory to a collection
 # The directory must contain a SKILL.md with name and description in YAML frontmatter
-skillsync add <path>
+skillsmanager add <path>
 
 # Upload to a specific collection
-skillsync add <path> --collection <name>
+skillsmanager add <path> --collection <name>
 ```
 
 ### Update a skill
@@ -49,10 +49,10 @@ skillsync add <path> --collection <name>
 ```bash
 # Push local edits back to storage
 # The skill must have been fetched on this machine first
-skillsync update <path>
+skillsmanager update <path>
 
 # If the skill exists in multiple collections, specify which one
-skillsync update <path> --collection <name>
+skillsmanager update <path> --collection <name>
 ```
 
 After updating, the local cache is refreshed so all symlinks on this machine reflect the change immediately.
@@ -61,76 +61,76 @@ After updating, the local cache is refreshed so all symlinks on this machine ref
 
 ```bash
 # Create a local registry (auto-created on first use)
-skillsync registry create
+skillsmanager registry create
 
 # Create a registry in Google Drive
-skillsync registry create --backend gdrive
+skillsmanager registry create --backend gdrive
 
 # Show all registries and their collection references
-skillsync registry list
+skillsmanager registry list
 
 # Search a backend for registries owned by the current user
-skillsync registry discover --backend gdrive
+skillsmanager registry discover --backend gdrive
 
 # Add a collection reference to the registry
-skillsync registry add-collection <name>
+skillsmanager registry add-collection <name>
 
 # Push local registry and collections to Google Drive
-skillsync registry push --backend gdrive
+skillsmanager registry push --backend gdrive
 
 # Create a new collection
-skillsync collection create [name]
+skillsmanager collection create [name]
 
 # Re-discover collections from storage
-skillsync refresh
+skillsmanager refresh
 ```
 
-### Install the skillsync skill for agents
+### Install the skillsmanager skill for agents
 
 ```bash
 # Install to all agent directories
-skillsync install
+skillsmanager install
 
 # Install to specific agents
-skillsync install --agent claude,codex
+skillsmanager install --agent claude,codex
 
 # Install to a custom path
-skillsync install --path <dir>
+skillsmanager install --path <dir>
 
 # Remove from all agents
-skillsync uninstall
+skillsmanager uninstall
 ```
 
 ## Common Workflows
 
 **User asks to find a skill:**
-1. `skillsync search <relevant terms>`
-2. `skillsync fetch <skill-name> --agent claude`
+1. `skillsmanager search <relevant terms>`
+2. `skillsmanager fetch <skill-name> --agent claude`
 
 **User asks to share a skill they created:**
 1. Ensure the skill directory has a `SKILL.md` with `name` and `description` in YAML frontmatter
-2. `skillsync add <path-to-skill-directory>`
+2. `skillsmanager add <path-to-skill-directory>`
 
 **User asks to update a skill:**
 1. Edit the skill files locally
-2. `skillsync update <path-to-skill-directory>`
+2. `skillsmanager update <path-to-skill-directory>`
 
 **User asks to install a skill for this project only:**
-1. `skillsync fetch <name> --agent claude --scope project`
+1. `skillsmanager fetch <name> --agent claude --scope project`
 
 **User wants to back up local skills to Google Drive:**
-1. `skillsync setup google` (one-time, human-only)
-2. `skillsync registry push --backend gdrive`
+1. `skillsmanager setup google` (one-time, human-only)
+2. `skillsmanager registry push --backend gdrive`
 
 **User wants to see what registries and collections exist:**
-1. `skillsync registry list`
+1. `skillsmanager registry list`
 
 ## Architecture
 
-- **Registry** (`SKILLSYNC_REGISTRY.yaml`): root index pointing to all collections across backends
-- **Collection** (`SKILLSYNC_COLLECTION.yaml`): folder of skills with an index file
-- **Backends**: `local` (default, `~/.skillssync/`) and `gdrive` (Google Drive)
-- **Cache**: skills are cached at `~/.skillssync/cache/<uuid>/` and symlinked to agent directories
+- **Registry** (`SKILLS_REGISTRY.yaml`): root index pointing to all collections across backends
+- **Collection** (`SKILLS_COLLECTION.yaml`): folder of skills with an index file
+- **Backends**: `local` (default, `~/.skillsmanager/`) and `gdrive` (Google Drive)
+- **Cache**: skills are cached at `~/.skillsmanager/cache/<uuid>/` and symlinked to agent directories
 - **Symlinks**: all agents share one cached copy — updating the cache updates all agents
 
 ## Scope

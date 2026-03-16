@@ -4,7 +4,7 @@ import path from "path";
 import os from "os";
 
 function makeTmpDir(): string {
-  return fs.mkdtempSync(path.join(os.tmpdir(), "skillsync-install-test-"));
+  return fs.mkdtempSync(path.join(os.tmpdir(), "skillsmanager-install-test-"));
 }
 
 let tmpAgentDirs: Record<string, string>;
@@ -27,11 +27,11 @@ vi.mock("../types.js", () => ({
 beforeEach(() => {
   tmpSkillSource = makeTmpDir();
   // Create a fake bundled skill
-  const skillDir = path.join(tmpSkillSource, "skills", "skillsync");
+  const skillDir = path.join(tmpSkillSource, "skills", "skillsmanager");
   fs.mkdirSync(skillDir, { recursive: true });
   fs.writeFileSync(
     path.join(skillDir, "SKILL.md"),
-    "---\nname: skillsync\ndescription: test\n---\n"
+    "---\nname: skillsmanager\ndescription: test\n---\n"
   );
 
   tmpAgentDirs = {
@@ -53,24 +53,24 @@ afterEach(() => {
 describe("install command", () => {
   it("creates symlink at the specified --path", () => {
     const targetDir = makeTmpDir();
-    const skillSource = path.join(tmpSkillSource, "skills", "skillsync");
+    const skillSource = path.join(tmpSkillSource, "skills", "skillsmanager");
 
     // Manually do what installToDir does
     fs.mkdirSync(targetDir, { recursive: true });
-    const linkPath = path.join(targetDir, "skillsync");
+    const linkPath = path.join(targetDir, "skillsmanager");
     fs.symlinkSync(skillSource, linkPath);
 
     expect(fs.existsSync(linkPath)).toBe(true);
     expect(fs.lstatSync(linkPath).isSymbolicLink()).toBe(true);
-    expect(fs.readFileSync(path.join(linkPath, "SKILL.md"), "utf-8")).toContain("skillsync");
+    expect(fs.readFileSync(path.join(linkPath, "SKILL.md"), "utf-8")).toContain("skillsmanager");
 
     fs.rmSync(targetDir, { recursive: true, force: true });
   });
 
   it("replaces an existing symlink (idempotent)", () => {
     const targetDir = makeTmpDir();
-    const skillSource = path.join(tmpSkillSource, "skills", "skillsync");
-    const linkPath = path.join(targetDir, "skillsync");
+    const skillSource = path.join(tmpSkillSource, "skills", "skillsmanager");
+    const linkPath = path.join(targetDir, "skillsmanager");
 
     // First install
     fs.symlinkSync(skillSource, linkPath);
@@ -89,7 +89,7 @@ describe("install command", () => {
 
   it("does not clobber a non-symlink directory", () => {
     const targetDir = makeTmpDir();
-    const linkPath = path.join(targetDir, "skillsync");
+    const linkPath = path.join(targetDir, "skillsmanager");
 
     // Create a real directory (not a symlink)
     fs.mkdirSync(linkPath);
@@ -108,20 +108,20 @@ describe("install command", () => {
 
   it("creates parent directories if they do not exist", () => {
     const deepDir = path.join(makeTmpDir(), "a", "b", "c", "skills");
-    const skillSource = path.join(tmpSkillSource, "skills", "skillsync");
+    const skillSource = path.join(tmpSkillSource, "skills", "skillsmanager");
 
     fs.mkdirSync(deepDir, { recursive: true });
-    fs.symlinkSync(skillSource, path.join(deepDir, "skillsync"));
+    fs.symlinkSync(skillSource, path.join(deepDir, "skillsmanager"));
 
-    expect(fs.existsSync(path.join(deepDir, "skillsync", "SKILL.md"))).toBe(true);
+    expect(fs.existsSync(path.join(deepDir, "skillsmanager", "SKILL.md"))).toBe(true);
 
     fs.rmSync(path.resolve(deepDir, "..", "..", "..", ".."), { recursive: true, force: true });
   });
 
   it("symlink content updates when source file changes", () => {
     const targetDir = makeTmpDir();
-    const skillSource = path.join(tmpSkillSource, "skills", "skillsync");
-    const linkPath = path.join(targetDir, "skillsync");
+    const skillSource = path.join(tmpSkillSource, "skills", "skillsmanager");
+    const linkPath = path.join(targetDir, "skillsmanager");
 
     fs.symlinkSync(skillSource, linkPath);
 
@@ -130,7 +130,7 @@ describe("install command", () => {
     expect(original).toContain("test");
 
     // Update the source (simulates npm update)
-    fs.writeFileSync(path.join(skillSource, "SKILL.md"), "---\nname: skillsync\ndescription: updated\n---\n");
+    fs.writeFileSync(path.join(skillSource, "SKILL.md"), "---\nname: skillsmanager\ndescription: updated\n---\n");
 
     // Read via symlink — should see the update
     const updated = fs.readFileSync(path.join(linkPath, "SKILL.md"), "utf-8");
@@ -140,15 +140,15 @@ describe("install command", () => {
   });
 
   it("installs to multiple agent dirs independently", () => {
-    const skillSource = path.join(tmpSkillSource, "skills", "skillsync");
+    const skillSource = path.join(tmpSkillSource, "skills", "skillsmanager");
 
     for (const [agent, skillsDir] of Object.entries(tmpAgentDirs)) {
       fs.mkdirSync(skillsDir, { recursive: true });
-      fs.symlinkSync(skillSource, path.join(skillsDir, "skillsync"));
+      fs.symlinkSync(skillSource, path.join(skillsDir, "skillsmanager"));
     }
 
     for (const [agent, skillsDir] of Object.entries(tmpAgentDirs)) {
-      const linkPath = path.join(skillsDir, "skillsync");
+      const linkPath = path.join(skillsDir, "skillsmanager");
       expect(fs.existsSync(linkPath)).toBe(true);
       expect(fs.lstatSync(linkPath).isSymbolicLink()).toBe(true);
     }
@@ -158,8 +158,8 @@ describe("install command", () => {
 describe("uninstall", () => {
   it("removes a symlink", () => {
     const targetDir = makeTmpDir();
-    const skillSource = path.join(tmpSkillSource, "skills", "skillsync");
-    const linkPath = path.join(targetDir, "skillsync");
+    const skillSource = path.join(tmpSkillSource, "skills", "skillsmanager");
+    const linkPath = path.join(targetDir, "skillsmanager");
 
     fs.symlinkSync(skillSource, linkPath);
     expect(fs.existsSync(linkPath)).toBe(true);
@@ -173,7 +173,7 @@ describe("uninstall", () => {
 
   it("does not remove a non-symlink", () => {
     const targetDir = makeTmpDir();
-    const linkPath = path.join(targetDir, "skillsync");
+    const linkPath = path.join(targetDir, "skillsmanager");
 
     // Create a real directory
     fs.mkdirSync(linkPath);
@@ -190,7 +190,7 @@ describe("uninstall", () => {
 
   it("handles already-uninstalled gracefully", () => {
     const targetDir = makeTmpDir();
-    const linkPath = path.join(targetDir, "skillsync");
+    const linkPath = path.join(targetDir, "skillsmanager");
 
     // Nothing to remove
     expect(fs.existsSync(linkPath)).toBe(false);
@@ -203,19 +203,19 @@ describe("uninstall", () => {
   });
 
   it("removes from multiple agents independently", () => {
-    const skillSource = path.join(tmpSkillSource, "skills", "skillsync");
+    const skillSource = path.join(tmpSkillSource, "skills", "skillsmanager");
 
     // Install to both
     for (const skillsDir of Object.values(tmpAgentDirs)) {
       fs.mkdirSync(skillsDir, { recursive: true });
-      fs.symlinkSync(skillSource, path.join(skillsDir, "skillsync"));
+      fs.symlinkSync(skillSource, path.join(skillsDir, "skillsmanager"));
     }
 
     // Uninstall from claude only
-    const claudeLink = path.join(tmpAgentDirs.claude, "skillsync");
+    const claudeLink = path.join(tmpAgentDirs.claude, "skillsmanager");
     fs.unlinkSync(claudeLink);
 
     expect(fs.existsSync(claudeLink)).toBe(false);
-    expect(fs.existsSync(path.join(tmpAgentDirs.codex, "skillsync"))).toBe(true);
+    expect(fs.existsSync(path.join(tmpAgentDirs.codex, "skillsmanager"))).toBe(true);
   });
 });

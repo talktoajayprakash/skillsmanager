@@ -28,7 +28,7 @@ export async function listCommand(): Promise<void> {
       console.log(chalk.yellow("No skills found across any collections."));
       console.log(
         chalk.dim(
-          'Run "skillsync collection create <name>" to create a collection, then "skillsync add <path>" to add skills.'
+          'Run "skillsmanager collection create <name>" to create a collection, then "skillsmanager add <path>" to add skills.'
         )
       );
       return;

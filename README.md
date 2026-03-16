@@ -1,12 +1,12 @@
-# SkillSync
+# Skills Manager
 
 A CLI for AI agents to discover, fetch, and share agent skills stored in Google Drive.
 
 ## What is it?
 
-SkillSync lets you maintain a personal library of agent skills in Google Drive and install them into any supported AI agent (Claude, Cursor, Windsurf, Copilot, etc.) with a single command.
+Skills Manager lets you maintain a personal library of agent skills in Google Drive and install them into any supported AI agent (Claude, Cursor, Windsurf, Copilot, etc.) with a single command.
 
-Skills are downloaded to a local cache (`~/.skillssync/cache/`) and symlinked into the agent's skills directory. No duplication — one copy, many agents.
+Skills are downloaded to a local cache (`~/.skillsmanager/cache/`) and symlinked into the agent's skills directory. No duplication — one copy, many agents.
 
 ## Supported agents
 
@@ -15,7 +15,7 @@ Skills are downloaded to a local cache (`~/.skillssync/cache/`) and symlinked in
 ## Installation
 
 ```bash
-npm install -g skillsync
+npm install -g skillsmanager
 ```
 
 ## Google Drive setup
@@ -23,31 +23,31 @@ npm install -g skillsync
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
 2. Create a project → enable the **Google Drive API**
 3. Create OAuth 2.0 credentials (Desktop app)
-4. Download `credentials.json` and save it to `~/.skillssync/credentials.json`
+4. Download `credentials.json` and save it to `~/.skillsmanager/credentials.json`
 
 ## Usage
 
 ```bash
 # Authenticate and discover registries
-skillsync init
+skillsmanager init
 
 # List all available skills
-skillsync list
+skillsmanager list
 
 # Search skills by name or description
-skillsync search <query>
+skillsmanager search <query>
 
 # Download a skill and install it for an agent
-skillsync fetch <skill-name> --agent claude
+skillsmanager fetch <skill-name> --agent claude
 
 # Add a local skill to your registry
-skillsync add ./my-skill
+skillsmanager add ./my-skill
 
 # Push local changes to an existing skill back to Drive
-skillsync update <skill-name>
+skillsmanager update <skill-name>
 
 # Re-scan Drive for new registries
-skillsync refresh
+skillsmanager refresh
 ```
 
 ## Registry format
@@ -77,7 +77,7 @@ description: Reviews code for bugs, style, and security issues
 ... skill instructions ...
 ```
 
-SkillSync auto-discovers any `SKILLS_SYNC.yaml` file owned by your Google account, so registries are found automatically on `skillsync init` or `skillsync refresh`.
+Skills Manager auto-discovers any `SKILLS_SYNC.yaml` file owned by your Google account, so registries are found automatically on `skillsmanager init` or `skillsmanager refresh`.
 
 ## Design doc
 

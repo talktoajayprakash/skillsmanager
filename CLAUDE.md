@@ -1,36 +1,36 @@
-# SkillSync — Agent Guide
+# Skills Manager — Agent Guide
 
-SkillSync is a CLI tool for storing and fetching agent skills from local or remote storage (Google Drive).
+Skills Manager is a CLI tool for storing and fetching agent skills from local or remote storage (Google Drive).
 
 For a full understanding of the design, decisions, and architecture read **[WRITEUP.md](./WRITEUP.md)** and **[docs/registry-architecture.md](./docs/registry-architecture.md)**.
 
 ## Quick reference
 
 ```bash
-skillsync install                       # install skillsync skill to all agents
-skillsync search <query>                # search by name or description (BM25)
-skillsync fetch <name> --agent <agent>  # download skill and symlink to agent
-skillsync add <path>                    # upload a local skill to a collection
-skillsync update <path>                 # push local changes back to storage
-skillsync list                          # list all available skills
-skillsync refresh                       # re-discover collections
-skillsync collection create             # create a new collection
-skillsync registry create               # create a local registry
-skillsync registry list                 # show registries and collections
-skillsync registry push --backend gdrive  # push local data to Google Drive
-skillsync setup google                  # one-time Google Drive setup (human-facing)
+skillsmanager install                       # install skillsmanager skill to all agents
+skillsmanager search <query>                # search by name or description (BM25)
+skillsmanager fetch <name> --agent <agent>  # download skill and symlink to agent
+skillsmanager add <path>                    # upload a local skill to a collection
+skillsmanager update <path>                 # push local changes back to storage
+skillsmanager list                          # list all available skills
+skillsmanager refresh                       # re-discover collections
+skillsmanager collection create             # create a new collection
+skillsmanager registry create               # create a local registry
+skillsmanager registry list                 # show registries and collections
+skillsmanager registry push --backend gdrive  # push local data to Google Drive
+skillsmanager setup google                  # one-time Google Drive setup (human-facing)
 ```
 
 ## Key files
 
 | Path | Purpose |
 |---|---|
-| `~/.skillssync/config.json` | Cached registries, collections, skills index |
-| `~/.skillssync/registry.yaml` | Local registry (SKILLSYNC_REGISTRY.yaml) |
-| `~/.skillssync/collections/<name>/` | Local collection storage |
-| `~/.skillssync/credentials.json` | Google OAuth client credentials |
-| `~/.skillssync/token.json` | OAuth access + refresh token |
-| `~/.skillssync/cache/<uuid>/<skill>/` | Downloaded skill cache |
+| `~/.skillsmanager/config.json` | Cached registries, collections, skills index |
+| `~/.skillsmanager/registry.yaml` | Local registry (SKILLS_REGISTRY.yaml) |
+| `~/.skillsmanager/collections/<name>/` | Local collection storage |
+| `~/.skillsmanager/credentials.json` | Google OAuth client credentials |
+| `~/.skillsmanager/token.json` | OAuth access + refresh token |
+| `~/.skillsmanager/cache/<uuid>/<skill>/` | Downloaded skill cache |
 
 ## Source layout
 

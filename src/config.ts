@@ -4,7 +4,7 @@ import path from "path";
 import { randomUUID } from "crypto";
 import type { Config, CollectionInfo, RegistryInfo, SkillLocation } from "./types.js";
 
-export const CONFIG_DIR = path.join(os.homedir(), ".skillssync");
+export const CONFIG_DIR = path.join(os.homedir(), ".skillsmanager");
 export const CREDENTIALS_PATH = path.join(CONFIG_DIR, "credentials.json");
 export const TOKEN_PATH = path.join(CONFIG_DIR, "token.json");
 export const CONFIG_PATH = path.join(CONFIG_DIR, "config.json");
@@ -20,7 +20,7 @@ export function ensureCacheDir(): void {
 
 export function readConfig(): Config {
   if (!fs.existsSync(CONFIG_PATH)) {
-    throw new Error(`No config found. Run "skillsync init" first.`);
+    throw new Error(`No config found. Run "skillsmanager init" first.`);
   }
   const raw = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf-8")) as Record<string, unknown>;
   // Backwards compat: very old configs used "registries" key for collections
@@ -129,7 +129,7 @@ export function readCredentials(): {
         `  2. Create a project and enable the Google Drive API\n` +
         `  3. Create OAuth 2.0 credentials (Desktop app type)\n` +
         `  4. Download the JSON and save as ${CREDENTIALS_PATH}\n` +
-        `  5. Run "skillsync init" again`
+        `  5. Run "skillsmanager init" again`
     );
   }
   const raw = JSON.parse(fs.readFileSync(CREDENTIALS_PATH, "utf-8"));

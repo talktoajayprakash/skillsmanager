@@ -12,18 +12,18 @@ import { mergeRegistries, mergeCollections } from "../config.js";
 import type { RegistryInfo, CollectionInfo } from "../types.js";
 
 function makeTmpDir(): string {
-  return fs.mkdtempSync(path.join(os.tmpdir(), "skillsync-registry-test-"));
+  return fs.mkdtempSync(path.join(os.tmpdir(), "skillsmanager-registry-test-"));
 }
 
 // ── Filename constants ────────────────────────────────────────────────────
 
 describe("filename constants", () => {
-  it("REGISTRY_FILENAME is SKILLSYNC_REGISTRY.yaml", () => {
-    expect(REGISTRY_FILENAME).toBe("SKILLSYNC_REGISTRY.yaml");
+  it("REGISTRY_FILENAME is SKILLS_REGISTRY.yaml", () => {
+    expect(REGISTRY_FILENAME).toBe("SKILLS_REGISTRY.yaml");
   });
 
-  it("COLLECTION_FILENAME is SKILLSYNC_COLLECTION.yaml", () => {
-    expect(COLLECTION_FILENAME).toBe("SKILLSYNC_COLLECTION.yaml");
+  it("COLLECTION_FILENAME is SKILLS_COLLECTION.yaml", () => {
+    expect(COLLECTION_FILENAME).toBe("SKILLS_COLLECTION.yaml");
   });
 
   it("LEGACY_COLLECTION_FILENAME is SKILLS_SYNC.yaml", () => {
@@ -67,7 +67,7 @@ describe("parseCollection / serializeCollection", () => {
 // ── Registry file parsing ─────────────────────────────────────────────────
 
 describe("parseRegistryFile / serializeRegistryFile", () => {
-  const yaml = `name: ajay-skills\nowner: ajay@example.com\nsource: local\ncollections:\n  - name: my_skills\n    backend: local\n    ref: my_skills\n  - name: team_prompts\n    backend: gdrive\n    ref: SKILLSYNC_TEAM_PROMPTS\n`;
+  const yaml = `name: ajay-skills\nowner: ajay@example.com\nsource: local\ncollections:\n  - name: my_skills\n    backend: local\n    ref: my_skills\n  - name: team_prompts\n    backend: gdrive\n    ref: SKILLS_TEAM_PROMPTS\n`;
 
   it("parses registry YAML correctly", () => {
     const result = parseRegistryFile(yaml);
@@ -76,7 +76,7 @@ describe("parseRegistryFile / serializeRegistryFile", () => {
     expect(result.source).toBe("local");
     expect(result.collections).toHaveLength(2);
     expect(result.collections[0]).toEqual({ name: "my_skills", backend: "local", ref: "my_skills" });
-    expect(result.collections[1]).toEqual({ name: "team_prompts", backend: "gdrive", ref: "SKILLSYNC_TEAM_PROMPTS" });
+    expect(result.collections[1]).toEqual({ name: "team_prompts", backend: "gdrive", ref: "SKILLS_TEAM_PROMPTS" });
   });
 
   it("serializes and round-trips", () => {
@@ -108,10 +108,10 @@ describe("parseRegistryFile / serializeRegistryFile", () => {
 describe("mergeRegistries", () => {
   it("preserves UUIDs for known registries matched by folderId", () => {
     const existing: RegistryInfo[] = [
-      { id: "existing-uuid", name: "local", backend: "local", folderId: "/home/.skillssync" },
+      { id: "existing-uuid", name: "local", backend: "local", folderId: "/home/.skillsmanager" },
     ];
     const fresh: Omit<RegistryInfo, "id">[] = [
-      { name: "local", backend: "local", folderId: "/home/.skillssync" },
+      { name: "local", backend: "local", folderId: "/home/.skillsmanager" },
     ];
     const result = mergeRegistries(fresh, existing);
     expect(result).toHaveLength(1);
@@ -172,7 +172,7 @@ describe("LocalBackend", () => {
     expect(parsed.source).toBe("local");
   });
 
-  it("creates a local collection directory with SKILLSYNC_COLLECTION.yaml", () => {
+  it("creates a local collection directory with SKILLS_COLLECTION.yaml", () => {
     const colDir = path.join(tmpDir, "collections", "my_skills");
     fs.mkdirSync(colDir, { recursive: true });
     const data = { name: "my_skills", owner: "tester", skills: [] };
@@ -248,7 +248,7 @@ describe("LocalBackend", () => {
 
     // Add another collection
     const parsed = parseRegistryFile(fs.readFileSync(registryPath, "utf-8"));
-    parsed.collections.push({ name: "skills_b", backend: "gdrive", ref: "SKILLSYNC_SKILLS_B" });
+    parsed.collections.push({ name: "skills_b", backend: "gdrive", ref: "SKILLS_SKILLS_B" });
     fs.writeFileSync(registryPath, serializeRegistryFile(parsed));
 
     const final = parseRegistryFile(fs.readFileSync(registryPath, "utf-8"));

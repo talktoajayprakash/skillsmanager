@@ -106,7 +106,7 @@ let tmpCacheDir: string;
 let fakeCollection: { id: string; name: string; folderId: string };
 
 function makeTmpDir(): string {
-  return fs.mkdtempSync(path.join(os.tmpdir(), "skillsync-search-test-"));
+  return fs.mkdtempSync(path.join(os.tmpdir(), "skillsmanager-search-test-"));
 }
 
 const mockSkills = [

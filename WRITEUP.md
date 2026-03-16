@@ -1,4 +1,4 @@
-# SkillSync — CLI for Syncing Agent Skills Across Machines
+# Skills Manager — CLI for Syncing Agent Skills Across Machines
 
 ## The Problem
 
@@ -8,7 +8,7 @@ Agent Skills (per the open standard at agentskills.io) are filesystem-based capa
 
 This is powerful, but it creates a real pain point: **skills are trapped on the machine where you created them.** If you work across multiple machines, want to share skills with a team, or just want a backup, you have no native sync mechanism.
 
-**SkillSync** solves this by giving you a CLI to store skills in remote storage (Google Drive today, more backends later) and selectively fetch them into any agent's skills directory.
+**Skills Manager** solves this by giving you a CLI to store skills in remote storage (Google Drive today, more backends later) and selectively fetch them into any agent's skills directory.
 
 ---
 
@@ -58,19 +58,19 @@ skills:
     description: Opinionated code review workflow
 ```
 
-- `name` is the logical name of the collection (without the `SKILLSYNC_` Drive prefix)
+- `name` is the logical name of the collection (without the `SKILLS_` Drive prefix)
 - `owner` is the authenticated user's email
 - Skills are globally unique by name within a collection
 
 ### Drive Folder Naming
 
-All Google Drive folders created by SkillSync are prefixed with `SKILLSYNC_` to avoid collisions with regular Drive folders:
+All Google Drive folders created by Skills Manager are prefixed with `SKILLS_` to avoid collisions with regular Drive folders:
 
 | Drive folder | Logical name (in YAML + CLI) |
 |---|---|
-| `SKILLSYNC_MY_SKILLS` | `MY_SKILLS` |
-| `SKILLSYNC_work` | `work` |
-| `SKILLSYNC_personal` | `personal` |
+| `SKILLS_MY_SKILLS` | `MY_SKILLS` |
+| `SKILLS_work` | `work` |
+| `SKILLS_personal` | `personal` |
 
 The prefix is stripped everywhere in the CLI — users and agents always work with the clean logical name.
 
@@ -80,28 +80,28 @@ The prefix is stripped everywhere in the CLI — users and agents always work wi
 
 ```bash
 # Google Drive setup (human-facing, interactive)
-skillsync setup google
+skillsmanager setup google
 
 # Discover / refresh collections
-skillsync init
-skillsync refresh
+skillsmanager init
+skillsmanager refresh
 
 # Browse skills
-skillsync list
-skillsync search <query>
+skillsmanager list
+skillsmanager search <query>
 
 # Fetch a skill into an agent's skills directory
-skillsync fetch <name> --agent <agent>
+skillsmanager fetch <name> --agent <agent>
 
 # Add a local skill to a collection
-skillsync add <path>
-skillsync add <path> --collection <name>
+skillsmanager add <path>
+skillsmanager add <path> --collection <name>
 
 # Push local changes to an existing skill back to Drive
-skillsync update <name>
+skillsmanager update <name>
 
 # Manage collections
-skillsync collection create [name]
+skillsmanager collection create [name]
 ```
 
 ### Agent-first design
@@ -114,11 +114,11 @@ All commands except `setup google` are **non-interactive** — they never block 
 
 No explicit login step required. Any command that needs Drive access calls `ensureAuth()` which:
 
-1. Checks `~/.skillssync/credentials.json` exists — if not, throws with `Run: skillsync setup google`
-2. Checks `~/.skillssync/token.json` exists — if not, launches the OAuth flow automatically
+1. Checks `~/.skillsmanager/credentials.json` exists — if not, throws with `Run: skillsmanager setup google`
+2. Checks `~/.skillsmanager/token.json` exists — if not, launches the OAuth flow automatically
 3. Returns the authenticated client with auto-refresh on token expiry
 
-`skillsync setup google` is the one-time human-facing wizard that walks through:
+`skillsmanager setup google` is the one-time human-facing wizard that walks through:
 1. Installing `gcloud` CLI (via Homebrew on macOS)
 2. `gcloud auth login`
 3. Creating or selecting a Google Cloud project
@@ -137,7 +137,7 @@ On first use of any command, `ensureReady()` runs `discoverCollections()` if no 
 Drive API query: name='SKILLS_SYNC.yaml' and 'me' in owners and trashed=false
 ```
 
-For each match, fetches the parent folder name, strips the `SKILLSYNC_` prefix, and stores the collection in `~/.skillssync/config.json`.
+For each match, fetches the parent folder name, strips the `SKILLS_` prefix, and stores the collection in `~/.skillsmanager/config.json`.
 
 ---
 
@@ -146,21 +146,21 @@ For each match, fetches the parent folder name, strips the `SKILLSYNC_` prefix, 
 Skills are cached locally at:
 
 ```
-~/.skillssync/cache/<collection-uuid>/<skill-name>/
+~/.skillsmanager/cache/<collection-uuid>/<skill-name>/
 ```
 
 The UUID is a stable identifier assigned per collection in `config.json`. It is backend-agnostic — it does not encode the backend type or folder ID. This keeps cache paths stable even if a collection is renamed or migrated to a different backend.
 
-When `skillsync fetch write-linkedin-post --agent claude` is run:
+When `skillsmanager fetch write-linkedin-post --agent claude` is run:
 1. Looks up which collection owns the skill
-2. Downloads to `~/.skillssync/cache/<uuid>/write-linkedin-post/`
-3. Creates symlink: `~/.claude/skills/write-linkedin-post → ~/.skillssync/cache/<uuid>/write-linkedin-post/`
+2. Downloads to `~/.skillsmanager/cache/<uuid>/write-linkedin-post/`
+3. Creates symlink: `~/.claude/skills/write-linkedin-post → ~/.skillsmanager/cache/<uuid>/write-linkedin-post/`
 
 Multiple agents can be linked to the same cache entry:
 
 ```
-~/.claude/skills/write-linkedin-post  →  ~/.skillssync/cache/<uuid>/write-linkedin-post/
-~/.codex/skills/write-linkedin-post   →  ~/.skillssync/cache/<uuid>/write-linkedin-post/
+~/.claude/skills/write-linkedin-post  →  ~/.skillsmanager/cache/<uuid>/write-linkedin-post/
+~/.codex/skills/write-linkedin-post   →  ~/.skillsmanager/cache/<uuid>/write-linkedin-post/
 ```
 
 One copy, many agents. Update once, all agents get the change.
@@ -182,7 +182,7 @@ One copy, many agents. Update once, all agents get the change.
 
 ## Config File
 
-`~/.skillssync/config.json`:
+`~/.skillsmanager/config.json`:
 
 ```json
 {
@@ -245,8 +245,8 @@ Note: `discoverCollections` returns without `id` — UUID assignment is handled 
 | Google Drive | `googleapis` npm package |
 | Terminal output | `chalk@4` + `ora@5` |
 | YAML | `yaml` |
-| Config | Plain JSON at `~/.skillssync/` |
-| Distribution | `npm install -g skillsync` |
+| Config | Plain JSON at `~/.skillsmanager/` |
+| Distribution | `npm install -g skillsmanager` |
 
 ---
 
@@ -254,13 +254,13 @@ Note: `discoverCollections` returns without `id` — UUID assignment is handled 
 
 | Decision | Choice | Reason |
 |---|---|---|
-| CLI name | `skillsync` | Avoids conflicts with `sk`, `skills` |
+| CLI name | `skillsmanager` | Avoids conflicts with `sk`, `skills` |
 | Skill structure | Flat, globally unique names | No category nesting — simpler for agents to reference |
 | Registry file | `SKILLS_SYNC.yaml` | Human-readable, lives alongside skills in any storage |
 | Terminology | **Collection** not Registry | More natural for personal/shared skill sets |
-| Drive folder prefix | `SKILLSYNC_` | Distinguishes skillsync folders from regular Drive folders |
+| Drive folder prefix | `SKILLS_` | Distinguishes skillsmanager folders from regular Drive folders |
 | Logical name | Strip prefix in YAML + CLI | Users and agents work with clean names, not Drive conventions |
-| Cache path | `~/.skillssync/cache/<uuid>/` | UUID is backend-agnostic and stable across renames/migrations |
+| Cache path | `~/.skillsmanager/cache/<uuid>/` | UUID is backend-agnostic and stable across renames/migrations |
 | UUID assignment | Config layer (`mergeCollections`) | Backends don't need to know about UUIDs; preserved across refreshes by matching `folderId` |
 | Auth | Auto-launch OAuth if no token | No explicit `init` required; any command triggers login when needed |
 | Interactive prompts | Only in `setup google` | All other commands are non-interactive — safe for agent use |

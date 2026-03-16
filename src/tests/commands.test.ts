@@ -6,7 +6,7 @@ import os from "os";
 // ── helpers ──────────────────────────────────────────────────────────────────
 
 function makeTmpDir(): string {
-  return fs.mkdtempSync(path.join(os.tmpdir(), "skillsync-test-"));
+  return fs.mkdtempSync(path.join(os.tmpdir(), "skillsmanager-test-"));
 }
 
 function makeSkillDir(root: string, name: string, description = "A test skill"): string {
@@ -64,7 +64,7 @@ function makeMockBackend(storeDir: string) {
 // ── module mocking ───────────────────────────────────────────────────────────
 
 // We intercept the config module so tests use isolated temp dirs instead of
-// ~/.skillssync, and intercept ready.ts to inject the mock backend.
+// ~/.skillsmanager, and intercept ready.ts to inject the mock backend.
 
 let tmpConfigDir: string;
 let tmpCacheDir: string;

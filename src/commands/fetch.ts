@@ -11,7 +11,7 @@ export async function fetchCommand(
 ): Promise<void> {
   if (names.length === 0) {
     console.log(chalk.red("Please specify at least one skill name."));
-    console.log(chalk.dim("  Example: skillsync fetch pdf-skill --agent claude"));
+    console.log(chalk.dim("  Example: skillsmanager fetch pdf-skill --agent claude"));
     return;
   }
 

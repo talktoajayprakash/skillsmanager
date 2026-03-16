@@ -5,7 +5,7 @@ import { ensureAuth } from "../auth.js";
 import { GDriveBackend } from "../backends/gdrive.js";
 
 export async function initCommand(): Promise<void> {
-  console.log(chalk.bold("\nSkillSync Init\n"));
+  console.log(chalk.bold("\nSkills Manager Init\n"));
 
   const auth = await ensureAuth();
   console.log(chalk.green("  ✓ Authenticated"));
@@ -20,7 +20,7 @@ export async function initCommand(): Promise<void> {
 
   if (collections.length === 0) {
     console.log(chalk.yellow("  No collections found."));
-    console.log(chalk.dim('  Run: skillsync collection create <name>'));
+    console.log(chalk.dim('  Run: skillsmanager collection create <name>'));
   } else {
     console.log(chalk.green(`  ✓ Found ${collections.length} collection(s):`));
     for (const c of collections) {
@@ -38,5 +38,5 @@ export async function initCommand(): Promise<void> {
   ).reduce((sum, col) => sum + col.skills.length, 0);
 
   console.log(`\n${totalSkills} skills across ${collections.length} collection(s).`);
-  console.log(`\nRun ${chalk.bold("skillsync list")} to browse all available skills.\n`);
+  console.log(`\nRun ${chalk.bold("skillsmanager list")} to browse all available skills.\n`);
 }

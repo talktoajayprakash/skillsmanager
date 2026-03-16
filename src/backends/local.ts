@@ -14,7 +14,7 @@ const COLLECTIONS_DIR = path.join(CONFIG_DIR, "collections");
 const LOCAL_REGISTRY_PATH = path.join(CONFIG_DIR, "registry.yaml");
 
 /**
- * Local filesystem backend — stores collections and the registry under ~/.skillssync/.
+ * Local filesystem backend — stores collections and the registry under ~/.skillsmanager/.
  * Works with zero setup, no auth, no internet. This is the default backend.
  */
 export class LocalBackend implements StorageBackend {

@@ -51,13 +51,13 @@ export async function registryCreateCommand(options: { backend?: string }): Prom
 export async function registryListCommand(): Promise<void> {
   let config: Config;
   try { config = readConfig(); } catch {
-    console.log(chalk.yellow("No config found. Run: skillsync registry create"));
+    console.log(chalk.yellow("No config found. Run: skillsmanager registry create"));
     return;
   }
 
   if (config.registries.length === 0) {
     console.log(chalk.yellow("No registries configured."));
-    console.log(chalk.dim("  Run: skillsync registry create"));
+    console.log(chalk.dim("  Run: skillsmanager registry create"));
     return;
   }
 
@@ -123,12 +123,12 @@ export async function registryAddCollectionCommand(
 ): Promise<void> {
   let config: Config;
   try { config = readConfig(); } catch {
-    console.log(chalk.red("No config found. Run: skillsync registry create"));
+    console.log(chalk.red("No config found. Run: skillsmanager registry create"));
     return;
   }
 
   if (config.registries.length === 0) {
-    console.log(chalk.red("No registries configured. Run: skillsync registry create"));
+    console.log(chalk.red("No registries configured. Run: skillsmanager registry create"));
     return;
   }
 
@@ -212,7 +212,7 @@ export async function registryPushCommand(options: { backend?: string }): Promis
         throw new Error(`Collection "${ref.name}" not found locally`);
       }
 
-      const PREFIX = "SKILLSYNC_";
+      const PREFIX = "SKILLS_";
       const folderName = `${PREFIX}${ref.name.toUpperCase()}`;
       const driveCol = await gdrive.createCollection(folderName);
 
@@ -269,7 +269,7 @@ export async function registryPushCommand(options: { backend?: string }): Promis
   } catch (err) {
     spinner.fail(`Failed to update registry: ${(err as Error).message}`);
     console.log(chalk.dim("  Collections were uploaded but the registry was not updated."));
-    console.log(chalk.dim("  Run 'skillsync registry push' again to retry."));
+    console.log(chalk.dim("  Run 'skillsmanager registry push' again to retry."));
   }
 }
 

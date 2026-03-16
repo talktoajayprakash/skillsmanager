@@ -43,7 +43,7 @@ export async function ensureReady(): Promise<ReadyContext> {
     if (collections.length === 0) {
       process.stdout.write("\n");
       throw new Error(
-        "No collections found. Run: skillsync collection create <name>"
+        "No collections found. Run: skillsmanager collection create <name>"
       );
     }
     process.stdout.write(chalk.green(`found ${collections.length}.\n`));

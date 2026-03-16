@@ -123,8 +123,8 @@ async function selectOrCreateProject(): Promise<string | null> {
   }
 
   // Create new
-  const rawName = await ask(`\nProject name ${chalk.dim('(leave blank for "SkillSync")')}: `);
-  const name = rawName || "SkillSync";
+  const rawName = await ask(`\nProject name ${chalk.dim('(leave blank for "Skills Manager")')}: `);
+  const name = rawName || "Skills Manager";
   const projectId = name.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "")
     + "-" + Date.now().toString().slice(-6);
 
@@ -149,27 +149,27 @@ function openUrl(url: string): void {
 // ─── Main command ─────────────────────────────────────────────────────────────
 
 export async function setupGoogleCommand(): Promise<void> {
-  console.log(chalk.bold("\nSkillSync — Google Drive Setup\n"));
+  console.log(chalk.bold("\nSkills Manager — Google Drive Setup\n"));
 
   // ── Case 1: credentials.json already present ──────────────────────────────
   if (credentialsExist()) {
     console.log(chalk.green("  ✓ credentials.json found"));
     if (hasToken()) {
       console.log(chalk.green("  ✓ Already authenticated — nothing to do."));
-      console.log(`\nRun ${chalk.bold("skillsync init")} to discover registries.\n`);
+      console.log(`\nRun ${chalk.bold("skillsmanager init")} to discover registries.\n`);
       return;
     }
     console.log(chalk.yellow("  ✗ Not yet authenticated — starting OAuth flow...\n"));
     await runAuthFlow();
     console.log(chalk.green("\n  ✓ Authenticated successfully."));
-    console.log(`\nRun ${chalk.bold("skillsync init")} to discover registries.\n`);
+    console.log(`\nRun ${chalk.bold("skillsmanager init")} to discover registries.\n`);
     return;
   }
 
   // ── Case 2: No credentials.json ───────────────────────────────────────────
-  console.log(chalk.yellow("  ✗ No credentials.json found at ~/.skillssync/credentials.json\n"));
+  console.log(chalk.yellow("  ✗ No credentials.json found at ~/.skillsmanager/credentials.json\n"));
 
-  const wantHelp = await confirm("Would you like SkillSync to help you set up a Google Cloud project?");
+  const wantHelp = await confirm("Would you like Skills Manager to help you set up a Google Cloud project?");
 
   if (!wantHelp) {
     printManualInstructions();
@@ -184,7 +184,7 @@ export async function setupGoogleCommand(): Promise<void> {
     const install = await confirm("  Install it now via Homebrew?");
     if (!install) {
       console.log(chalk.dim("  Install manually: https://cloud.google.com/sdk/docs/install"));
-      console.log(chalk.dim("  Then re-run: skillsync setup google"));
+      console.log(chalk.dim("  Then re-run: skillsmanager setup google"));
       return;
     }
     const ok = await installGcloud();
@@ -247,7 +247,7 @@ export async function setupGoogleCommand(): Promise<void> {
   console.log(`  URL: ${chalk.cyan(credentialsUrl)}\n`);
   console.log(chalk.dim("  Instructions:"));
   console.log(chalk.dim("    1. Application type → Desktop app"));
-  console.log(chalk.dim('    2. Name → "SkillSync" (or anything)'));
+  console.log(chalk.dim('    2. Name → "Skills Manager" (or anything)'));
   console.log(chalk.dim('    3. Click "Create" → then "Download JSON"'));
   console.log(chalk.dim("    4. Note where the file is saved\n"));
 
@@ -283,13 +283,13 @@ export async function setupGoogleCommand(): Promise<void> {
 
   if (!credSrc || !fs.existsSync(credSrc)) {
     console.log(chalk.red(`  File not found: ${credSrc}`));
-    console.log(chalk.dim(`  Copy it manually: cp <path> ~/.skillssync/credentials.json`));
+    console.log(chalk.dim(`  Copy it manually: cp <path> ~/.skillsmanager/credentials.json`));
     return;
   }
 
   ensureConfigDir();
   fs.copyFileSync(credSrc, CREDENTIALS_PATH);
-  console.log(chalk.green(`\n  ✓ Credentials saved to ~/.skillssync/credentials.json`));
+  console.log(chalk.green(`\n  ✓ Credentials saved to ~/.skillsmanager/credentials.json`));
 
   // ── Add test user ─────────────────────────────────────────────────────────
   console.log(chalk.bold("\nStep 6 — Add Test User\n"));
@@ -307,10 +307,10 @@ export async function setupGoogleCommand(): Promise<void> {
   await ask("Press Enter once you have added your email as a test user...");
 
   // ── OAuth flow ────────────────────────────────────────────────────────────
-  console.log(chalk.bold("\nStep 7 — Authorize SkillSync\n"));
+  console.log(chalk.bold("\nStep 7 — Authorize Skills Manager\n"));
   await runAuthFlow();
   console.log(chalk.green("\n  ✓ Setup complete!"));
-  console.log(`\nRun ${chalk.bold("skillsync init")} to discover your registries.\n`);
+  console.log(`\nRun ${chalk.bold("skillsmanager init")} to discover your registries.\n`);
 }
 
 function printManualInstructions(): void {
@@ -323,6 +323,6 @@ function printManualInstructions(): void {
   console.log("       APIs & Services → Credentials → Create Credentials → OAuth 2.0 Client ID");
   console.log("       Application type: Desktop app");
   console.log("  5. Download the JSON and save it:");
-  console.log(chalk.cyan(`       ~/.skillssync/credentials.json`));
-  console.log(`\n  Then run: ${chalk.bold("skillsync setup google")}\n`);
+  console.log(chalk.cyan(`       ~/.skillsmanager/credentials.json`));
+  console.log(`\n  Then run: ${chalk.bold("skillsmanager setup google")}\n`);
 }

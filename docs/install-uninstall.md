@@ -2,43 +2,43 @@
 
 ## Problem
 
-When a user installs `skillsync` via npm, agents on their machine don't know it exists. They need a skill file that teaches them how to use the CLI. Previously this was handled by a `postinstall` hook that automatically symlinked the skill to all agent directories — but users may not want skills written to their agent directories without explicit consent.
+When a user installs `skillsmanager` via npm, agents on their machine don't know it exists. They need a skill file that teaches them how to use the CLI. Previously this was handled by a `postinstall` hook that automatically symlinked the skill to all agent directories — but users may not want skills written to their agent directories without explicit consent.
 
 ## Solution
 
-Explicit `skillsync install` and `skillsync uninstall` commands that give the user full control over where the skill is installed.
+Explicit `skillsmanager install` and `skillsmanager uninstall` commands that give the user full control over where the skill is installed.
 
 ## Commands
 
-### `skillsync install`
+### `skillsmanager install`
 
 | Usage | Effect |
 |---|---|
-| `skillsync install` | Install to all 8 supported agent directories |
-| `skillsync install --agent claude` | Install to claude only |
-| `skillsync install --agent claude,codex` | Install to specific agents (comma-separated) |
-| `skillsync install --path ~/custom/dir` | Install to a custom directory |
+| `skillsmanager install` | Install to all 8 supported agent directories |
+| `skillsmanager install --agent claude` | Install to claude only |
+| `skillsmanager install --agent claude,codex` | Install to specific agents (comma-separated) |
+| `skillsmanager install --path ~/custom/dir` | Install to a custom directory |
 
-### `skillsync uninstall`
+### `skillsmanager uninstall`
 
 | Usage | Effect |
 |---|---|
-| `skillsync uninstall` | Remove from all agent directories |
-| `skillsync uninstall --agent claude` | Remove from specific agent(s) |
-| `skillsync uninstall --path ~/custom/dir` | Remove from a custom directory |
+| `skillsmanager uninstall` | Remove from all agent directories |
+| `skillsmanager uninstall --agent claude` | Remove from specific agent(s) |
+| `skillsmanager uninstall --path ~/custom/dir` | Remove from a custom directory |
 
 ## How It Works
 
 ### Bundled skill
 
-A `SKILL.md` is bundled at `skills/skillsync/SKILL.md` in the npm package. This file teaches agents all skillsync commands, flags, and common workflows.
+A `SKILL.md` is bundled at `skills/skillsmanager/SKILL.md` in the npm package. This file teaches agents all skillsmanager commands, flags, and common workflows.
 
 ### Symlink architecture
 
 ```
-~/.claude/skills/skillsync  →  <npm-package>/skills/skillsync/
-~/.codex/skills/skillsync   →  <npm-package>/skills/skillsync/
-~/.cursor/skills/skillsync  →  <npm-package>/skills/skillsync/
+~/.claude/skills/skillsmanager  →  <npm-package>/skills/skillsmanager/
+~/.codex/skills/skillsmanager   →  <npm-package>/skills/skillsmanager/
+~/.cursor/skills/skillsmanager  →  <npm-package>/skills/skillsmanager/
 ...
 ```
 
@@ -84,7 +84,7 @@ Explicit commands are transparent, predictable, and give the user control.
 
 ```
 skills/
-└── skillsync/
+└── skillsmanager/
     └── SKILL.md          # Bundled skill (agent-oriented usage guide)
 
 src/commands/
@@ -96,6 +96,6 @@ src/tests/
 
 ## Key Implementation Details
 
-- `SKILL_SOURCE` is resolved relative to the compiled output (`dist/commands/install.js` → `../../skills/skillsync`), so it works whether the package is npm-linked or globally installed.
+- `SKILL_SOURCE` is resolved relative to the compiled output (`dist/commands/install.js` → `../../skills/skillsmanager`), so it works whether the package is npm-linked or globally installed.
 - Parent directories are created with `mkdirSync({ recursive: true })` — installing to `~/.gemini/skills/` works even if `~/.gemini/` doesn't exist yet.
-- The `--agent` flag accepts a comma-separated list, allowing `skillsync install --agent claude,codex` in a single command.
+- The `--agent` flag accepts a comma-separated list, allowing `skillsmanager install --agent claude,codex` in a single command.

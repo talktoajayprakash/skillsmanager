@@ -24,7 +24,7 @@ const supportedAgents = Object.keys(AGENT_PATHS).join(", ");
 
 // Read the bundled SKILL.md as the CLI help — single source of truth
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const skillMdPath = path.resolve(__dirname, "..", "skills", "skillsync", "SKILL.md");
+const skillMdPath = path.resolve(__dirname, "..", "skills", "skillsmanager", "SKILL.md");
 let helpText = "Discover, fetch, and manage agent skills from local or remote storage.";
 try {
   const raw = fs.readFileSync(skillMdPath, "utf-8");
@@ -33,9 +33,9 @@ try {
 } catch { /* use fallback */ }
 
 program
-  .name("skillsync")
+  .name("skillsmanager")
   .description(helpText)
-  .version("0.1.0");
+  .version("0.0.1");
 
 // ── Setup ────────────────────────────────────────────────────────────────────
 
@@ -103,7 +103,7 @@ const collection = program
 
 collection
   .command("create [name]")
-  .description("Create a new collection (defaults to SKILLSYNC_MY_SKILLS)")
+  .description("Create a new collection (defaults to SKILLS_MY_SKILLS)")
   .action(collectionCreateCommand);
 
 // ── Registry ─────────────────────────────────────────────────────────────────
@@ -148,7 +148,7 @@ registry
 
 program
   .command("install")
-  .description("Install the skillsync skill to agent directories")
+  .description("Install the skillsmanager skill to agent directories")
   .option("--agent <agents>", "Comma-separated agents (default: all)")
   .option("--path <dir>", "Custom directory to install to")
   .action((options: { agent?: string; path?: string }) =>
@@ -157,7 +157,7 @@ program
 
 program
   .command("uninstall")
-  .description("Remove the skillsync skill from agent directories")
+  .description("Remove the skillsmanager skill from agent directories")
   .option("--agent <agents>", "Comma-separated agents (default: all)")
   .option("--path <dir>", "Custom directory to remove from")
   .action((options: { agent?: string; path?: string }) =>

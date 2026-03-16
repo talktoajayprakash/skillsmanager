@@ -60,7 +60,7 @@ export class GDriveBackend implements StorageBackend {
 
         const rawName = parent.data.name ?? "unknown";
         collections.push({
-          name: rawName.replace(/^SKILLSYNC_/i, ""),
+          name: rawName.replace(/^SKILLS_/i, ""),
           backend: "gdrive",
           folderId: parentId,
           registryFileId: file.id ?? undefined,
@@ -211,7 +211,7 @@ export class GDriveBackend implements StorageBackend {
     const folderId = folderRes.data.id!;
 
     const owner = await this.getOwnerEmail();
-    const logicalName = folderName.replace(/^SKILLSYNC_/i, "");
+    const logicalName = folderName.replace(/^SKILLS_/i, "");
     const emptyCollection: CollectionFile = { name: logicalName, owner, skills: [] };
     const content = serializeCollection(emptyCollection);
     const fileRes = await this.drive.files.create({
@@ -279,7 +279,7 @@ export class GDriveBackend implements StorageBackend {
         });
 
         registries.push({
-          name: (parent.data.name ?? "unknown").replace(/^SKILLSYNC_/i, ""),
+          name: (parent.data.name ?? "unknown").replace(/^SKILLS_/i, ""),
           backend: "gdrive",
           folderId: parentId,
           fileId: file.id ?? undefined,
@@ -340,8 +340,8 @@ export class GDriveBackend implements StorageBackend {
   async resolveCollectionRef(ref: RegistryCollectionRef): Promise<Omit<CollectionInfo, "id"> | null> {
     if (ref.backend !== "gdrive") return null;
 
-    // Search for folder by name (try with SKILLSYNC_ prefix and without)
-    const names = ref.ref.startsWith("SKILLSYNC_") ? [ref.ref] : [`SKILLSYNC_${ref.ref}`, ref.ref];
+    // Search for folder by name (try with SKILLS_ prefix and without)
+    const names = ref.ref.startsWith("SKILLS_") ? [ref.ref] : [`SKILLS_${ref.ref}`, ref.ref];
 
     for (const name of names) {
       const res = await this.drive.files.list({
@@ -353,7 +353,7 @@ export class GDriveBackend implements StorageBackend {
       const folder = res.data.files?.[0];
       if (folder?.id) {
         return {
-          name: (folder.name ?? name).replace(/^SKILLSYNC_/i, ""),
+          name: (folder.name ?? name).replace(/^SKILLS_/i, ""),
           backend: "gdrive",
           folderId: folder.id,
         };
@@ -364,7 +364,7 @@ export class GDriveBackend implements StorageBackend {
   }
 
   async createRegistry(name?: string): Promise<RegistryInfo> {
-    const folderName = name ? `SKILLSYNC_REGISTRY_${name}` : "SKILLSYNC_REGISTRY";
+    const folderName = name ? `SKILLS_REGISTRY_${name}` : "SKILLS_REGISTRY";
 
     const folderRes = await this.drive.files.create({
       requestBody: { name: folderName, mimeType: FOLDER_MIME },

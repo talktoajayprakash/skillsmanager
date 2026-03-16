@@ -13,15 +13,15 @@ collection.
 
 ### Current behavior
 ```bash
-skillsync add ./my-skill          # user must provide exact path
+skillsmanager add ./my-skill          # user must provide exact path
 ```
 Works, but the user (or agent) has to know the path.
 
 ### Proposed behavior
 ```bash
-skillsync add my-skill --agent claude
+skillsmanager add my-skill --agent claude
 ```
-SkillSync knows where Claude's skills live. It resolves the skill name to
+Skills Manager knows where Claude's skills live. It resolves the skill name to
 a path by checking:
 1. `<cwd>/.claude/skills/my-skill/`  ← project-scoped first
 2. `~/.claude/skills/my-skill/`      ← then global
@@ -50,7 +50,7 @@ everywhere) or locally (only in this project).
 
 ### Current behavior
 ```bash
-skillsync fetch my-skill --agent claude
+skillsmanager fetch my-skill --agent claude
 # always installs to ~/.claude/skills/ (global)
 ```
 
@@ -59,9 +59,9 @@ skillsync fetch my-skill --agent claude
 Add `--scope` flag:
 
 ```bash
-skillsync fetch my-skill --agent claude                   # global (default)
-skillsync fetch my-skill --agent claude --scope project   # local to cwd
-skillsync fetch my-skill --agent claude --scope global    # explicit global
+skillsmanager fetch my-skill --agent claude                   # global (default)
+skillsmanager fetch my-skill --agent claude --scope project   # local to cwd
+skillsmanager fetch my-skill --agent claude --scope global    # explicit global
 ```
 
 **global** → symlink at `~/.claude/skills/my-skill`
@@ -78,9 +78,9 @@ should ask:
 
 Then call:
 ```bash
-skillsync fetch my-skill --agent claude --scope global
+skillsmanager fetch my-skill --agent claude --scope global
 # or
-skillsync fetch my-skill --agent claude --scope project
+skillsmanager fetch my-skill --agent claude --scope project
 ```
 
 ### Decisions
@@ -93,13 +93,13 @@ skillsync fetch my-skill --agent claude --scope project
 
 ## Summary of changes needed
 
-### `skillsync add`
+### `skillsmanager add`
 - Add `--agent <agent>` option
 - When `--agent` is provided and path is just a name (no `/`), resolve it
   from the agent's known skill directories
-- Existing `skillsync add <path>` behavior unchanged
+- Existing `skillsmanager add <path>` behavior unchanged
 
-### `skillsync fetch`
+### `skillsmanager fetch`
 - Add `--scope <global|project>` option (default: `global`)
 - `global` → existing behavior (`~/.agent/skills/`)
 - `project` → `<cwd>/.agent/skills/`, create dir if needed
@@ -118,14 +118,14 @@ skillsync fetch my-skill --agent claude --scope project
 changes back to the remote collection.
 
 ```bash
-skillsync update <path>
-skillsync update <path> --collection <name>   # override if needed
+skillsmanager update <path>
+skillsmanager update <path> --collection <name>   # override if needed
 ```
 
-### How skillsync knows which collection to update
+### How skillsmanager knows which collection to update
 
-SkillSync tracks every skill it has ever `add`ed or `fetch`ed in a local
-index stored in `~/.skillssync/config.json` under a `skills` key:
+Skills Manager tracks every skill it has ever `add`ed or `fetch`ed in a local
+index stored in `~/.skillsmanager/config.json` under a `skills` key:
 
 ```json
 {
@@ -149,12 +149,12 @@ index stored in `~/.skillssync/config.json` under a `skills` key:
 5. Update description in `SKILLS_SYNC.yaml` if it changed
 
 ### Error cases
-- Skill not in local index → `Skill not tracked. Use: skillsync add <path>`
-- Collection for that skill no longer in config → `Collection not found. Run: skillsync refresh`
+- Skill not in local index → `Skill not tracked. Use: skillsmanager add <path>`
+- Collection for that skill no longer in config → `Collection not found. Run: skillsmanager refresh`
 - `--collection <name>` provided → override the index lookup
 
 ---
 
 ## Not in scope for now
 - Conflict resolution if remote and local have diverged
-- `skillsync add --all --agent claude` (bulk add all unsynced local skills)
+- `skillsmanager add --all --agent claude` (bulk add all unsynced local skills)

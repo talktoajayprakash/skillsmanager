@@ -22,7 +22,7 @@ export async function refreshCommand(): Promise<void> {
 
     if (collections.length === 0) {
       console.log(chalk.yellow("No collections found."));
-      console.log(chalk.dim("  Run: skillsync collection create <name>"));
+      console.log(chalk.dim("  Run: skillsmanager collection create <name>"));
     } else {
       console.log(chalk.green(`Found ${collections.length} collection(s):`));
       for (const c of collections) {

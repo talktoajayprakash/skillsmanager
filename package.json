@@ -1,21 +1,42 @@
 {
-  "name": "skillsync",
-  "version": "0.1.0",
-  "description": "Discover, fetch, and manage agent skills from remote storage",
+  "name": "skillsmanager",
+  "version": "0.0.1",
+  "description": "Discover, fetch, and manage agent skills from local or remote storage",
   "type": "module",
   "bin": {
-    "skillsync": "./dist/index.js"
+    "skillsmanager": "./dist/index.js"
   },
   "files": [
     "dist/",
+    "!dist/tests/",
     "skills/"
   ],
   "scripts": {
     "build": "tsc",
+    "prepublishOnly": "npm run build",
     "dev": "node --loader ts-node/esm src/index.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },
+  "keywords": [
+    "ai",
+    "agent",
+    "skills",
+    "claude",
+    "codex",
+    "cursor",
+    "copilot",
+    "gemini",
+    "registry",
+    "sync"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/talktoajayprakash/skillsync.git"
+  },
+  "author": "Ajay Prakash",
+  "license": "MIT",
+  "homepage": "https://github.com/talktoajayprakash/skillsync#readme",
   "dependencies": {
     "chalk": "^4.1.2",
     "commander": "^12.0.0",

@@ -18,7 +18,7 @@ export interface CollectionInfo {
   name: string;
   backend: string;      // "local" | "gdrive" | "github" — string for extensibility
   folderId: string;     // backend-specific location identifier
-  registryFileId?: string; // backend-specific file ID of SKILLSYNC_COLLECTION.yaml
+  registryFileId?: string; // backend-specific file ID of SKILLS_COLLECTION.yaml
   sourceRegistryId?: string; // UUID of the registry that discovered this collection
 }
 
@@ -40,7 +40,7 @@ export interface RegistryInfo {
   name: string;
   backend: string;
   folderId: string;     // backend-specific location of the registry
-  fileId?: string;      // backend-specific file ID of SKILLSYNC_REGISTRY.yaml
+  fileId?: string;      // backend-specific file ID of SKILLS_REGISTRY.yaml
 }
 
 export interface SkillLocation {

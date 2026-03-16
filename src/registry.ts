@@ -3,8 +3,8 @@ import type { CollectionFile, RegistryFile } from "./types.js";
 
 // ── Filename constants ───────────────────────────────────────────────────────
 
-export const REGISTRY_FILENAME = "SKILLSYNC_REGISTRY.yaml";
-export const COLLECTION_FILENAME = "SKILLSYNC_COLLECTION.yaml";
+export const REGISTRY_FILENAME = "SKILLS_REGISTRY.yaml";
+export const COLLECTION_FILENAME = "SKILLS_COLLECTION.yaml";
 export const LEGACY_COLLECTION_FILENAME = "SKILLS_SYNC.yaml";
 
 // ── Collection (formerly "registry") parsing ─────────────────────────────────

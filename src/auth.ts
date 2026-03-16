@@ -41,7 +41,7 @@ export async function runAuthFlow(): Promise<OAuth2Client> {
     prompt: "consent",
   });
 
-  console.log("\nOpen this URL in your browser to authorize SkillSync:\n");
+  console.log("\nOpen this URL in your browser to authorize Skills Manager:\n");
   console.log(authUrl);
   console.log();
 
@@ -54,7 +54,7 @@ export async function runAuthFlow(): Promise<OAuth2Client> {
 
 export function getAuthClient(): OAuth2Client {
   if (!fs.existsSync(TOKEN_PATH)) {
-    throw new Error(`Not authenticated. Run "skillsync init" first.`);
+    throw new Error(`Not authenticated. Run "skillsmanager init" first.`);
   }
   const client = createOAuth2Client();
   const token = JSON.parse(fs.readFileSync(TOKEN_PATH, "utf-8"));
@@ -76,7 +76,7 @@ export function hasToken(): boolean {
 export async function ensureAuth(): Promise<OAuth2Client> {
   if (!credentialsExist()) {
     throw new Error(
-      "No credentials found. Run: skillsync setup google"
+      "No credentials found. Run: skillsmanager setup google"
     );
   }
   if (!hasToken()) {

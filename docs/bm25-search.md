@@ -1,8 +1,8 @@
-# BM25 Search in SkillSync
+# BM25 Search in Skills Manager
 
 ## Why BM25
 
-The original search was an exact substring match — `skillsync search "linkedin post"` would only
+The original search was an exact substring match — `skillsmanager search "linkedin post"` would only
 match if that exact phrase appeared in the skill name or description. BM25 replaces this with
 ranked, token-based search so queries like `"post on linkedin"` or `"linkedin"` both surface
 `write_linkedin_post`.
@@ -46,7 +46,7 @@ count. The `b` parameter controls how much length is penalized.
 
 These are the widely accepted defaults used in search engines.
 
-## Implementation in SkillSync
+## Implementation in Skills Manager
 
 **File:** `src/bm25.ts`
 
@@ -87,5 +87,5 @@ BM25 is still keyword-based. It won't match synonyms or paraphrases:
 - `"message someone"` → won't match `send_email`
 
 For true semantic matching, embeddings (e.g. via Claude API) would be needed. Given the small
-corpus size typical of SkillSync collections, BM25 covers the practical cases well without any
+corpus size typical of Skills Manager collections, BM25 covers the practical cases well without any
 external dependencies or API calls.

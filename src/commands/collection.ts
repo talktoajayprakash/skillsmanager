@@ -10,7 +10,7 @@ export async function collectionCreateCommand(name?: string): Promise<void> {
   const auth = await ensureAuth();
   const backend = new GDriveBackend(auth);
 
-  const PREFIX = "SKILLSYNC_";
+  const PREFIX = "SKILLS_";
   let folderName: string;
   if (!name) {
     folderName = `${PREFIX}MY_SKILLS`;
@@ -36,7 +36,7 @@ export async function collectionCreateCommand(name?: string): Promise<void> {
     }
     writeConfig(config);
 
-    console.log(`\nRun ${chalk.bold(`skillsync add <path>`)} to add skills to it.\n`);
+    console.log(`\nRun ${chalk.bold(`skillsmanager add <path>`)} to add skills to it.\n`);
   } catch (err) {
     spinner.fail(`Failed: ${(err as Error).message}`);
   }

@@ -58,17 +58,17 @@ export async function updateCommand(
           return col?.name ?? e.collectionId;
         }).join(", ");
         console.log(chalk.red(`"${skillName}" exists in multiple collections: ${names}`));
-        console.log(chalk.dim(`  Use: skillsync update ${skillPath} --collection <name>`));
+        console.log(chalk.dim(`  Use: skillsmanager update ${skillPath} --collection <name>`));
       } else {
         console.log(chalk.red(`Skill "${skillName}" is not tracked in the skills index.`));
-        console.log(chalk.dim(`  Run: skillsync fetch ${skillName} --agent <agent> first.`));
+        console.log(chalk.dim(`  Run: skillsmanager fetch ${skillName} --agent <agent> first.`));
       }
       return;
     }
 
     collection = config.collections.find((c) => c.id === entry.collectionId) ?? null;
     if (!collection) {
-      console.log(chalk.red(`Collection not found. Run: skillsync refresh`));
+      console.log(chalk.red(`Collection not found. Run: skillsmanager refresh`));
       return;
     }
   }
