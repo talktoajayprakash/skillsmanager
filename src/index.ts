@@ -13,6 +13,7 @@ import { addCommand } from "./commands/add.js";
 import { updateCommand } from "./commands/update.js";
 import { refreshCommand } from "./commands/refresh.js";
 import { setupGoogleCommand } from "./commands/setup/google.js";
+import { setupGithubCommand } from "./commands/setup/github.js";
 import { collectionCreateCommand } from "./commands/collection.js";
 import { installCommand, uninstallCommand } from "./commands/install.js";
 import {
@@ -47,6 +48,11 @@ setup
   .command("google")
   .description("One-time Google Drive setup (human-facing, not for agents)")
   .action(setupGoogleCommand);
+
+setup
+  .command("github")
+  .description("One-time GitHub setup — checks gh CLI and runs gh auth login")
+  .action(setupGithubCommand);
 
 // ── Core commands ────────────────────────────────────────────────────────────
 
@@ -104,7 +110,11 @@ const collection = program
 collection
   .command("create [name]")
   .description("Create a new collection (defaults to SKILLS_MY_SKILLS)")
-  .action(collectionCreateCommand);
+  .option("--backend <backend>", "gdrive (default) or github", "gdrive")
+  .option("--repo <owner/repo>", "GitHub repo to use (required for --backend github)")
+  .action((name: string | undefined, options: { backend?: string; repo?: string }) =>
+    collectionCreateCommand(name, options)
+  );
 
 // ── Registry ─────────────────────────────────────────────────────────────────
 
@@ -114,9 +124,10 @@ const registry = program
 
 registry
   .command("create")
-  .description("Create a new registry (default: local, --backend gdrive for Drive)")
-  .option("--backend <backend>", "local (default) or gdrive", "local")
-  .action((options: { backend?: string }) => registryCreateCommand(options));
+  .description("Create a new registry (default: local, --backend gdrive or --backend github)")
+  .option("--backend <backend>", "local (default), gdrive, or github", "local")
+  .option("--repo <owner/repo>", "GitHub repo to use (required for --backend github)")
+  .action((options: { backend?: string; repo?: string }) => registryCreateCommand(options));
 
 registry
   .command("list")
@@ -126,7 +137,7 @@ registry
 registry
   .command("discover")
   .description("Search a backend for registries owned by the current user")
-  .option("--backend <backend>", "local (default) or gdrive", "local")
+  .option("--backend <backend>", "local (default), gdrive, or github", "local")
   .action((options: { backend?: string }) => registryDiscoverCommand(options));
 
 registry
@@ -149,8 +160,9 @@ registry
 registry
   .command("push")
   .description("Push local registry and collections to a remote backend")
-  .option("--backend <backend>", "Target backend (default: gdrive)", "gdrive")
-  .action((options: { backend?: string }) => registryPushCommand(options));
+  .option("--backend <backend>", "Target backend: gdrive (default) or github", "gdrive")
+  .option("--repo <owner/repo>", "GitHub repo to push into (required when --backend github)")
+  .action((options: { backend?: string; repo?: string }) => registryPushCommand(options));
 
 // ── Install/Uninstall ────────────────────────────────────────────────────────
 

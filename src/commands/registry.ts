@@ -4,47 +4,45 @@ import fs from "fs";
 import { readConfig, writeConfig, mergeRegistries, CONFIG_PATH, CACHE_DIR } from "../config.js";
 import { ensureAuth } from "../auth.js";
 import { GDriveBackend } from "../backends/gdrive.js";
+import { GithubBackend } from "../backends/github.js";
 import { LocalBackend } from "../backends/local.js";
 import type { CollectionInfo, Config, RegistryInfo } from "../types.js";
+import { resolveBackend } from "../backends/resolve.js";
 
-export async function registryCreateCommand(options: { backend?: string }): Promise<void> {
+export async function registryCreateCommand(options: { backend?: string; repo?: string }): Promise<void> {
   const backend = options.backend ?? "local";
 
-  if (backend === "local") {
-    const local = new LocalBackend();
-    const spinner = ora("Creating local registry...").start();
-    try {
-      const registry = await local.createRegistry();
-      spinner.succeed(`Local registry created`);
+  const supported = ["local", "gdrive", "github"];
+  if (!supported.includes(backend)) {
+    console.log(chalk.red(`Unknown backend "${backend}". Supported: ${supported.join(", ")}`));
+    return;
+  }
 
-      let config: Config = { registries: [], collections: [], skills: {}, discoveredAt: new Date().toISOString() };
-      if (fs.existsSync(CONFIG_PATH)) {
-        try { config = readConfig(); } catch { /* use default */ }
-      }
-      config.registries.push(registry);
-      writeConfig(config);
-    } catch (err) {
-      spinner.fail(`Failed: ${(err as Error).message}`);
-    }
-  } else if (backend === "gdrive") {
-    const auth = await ensureAuth();
-    const gdrive = new GDriveBackend(auth);
-    const spinner = ora("Creating registry in Google Drive...").start();
-    try {
-      const registry = await gdrive.createRegistry();
-      spinner.succeed(`Registry created in Google Drive`);
+  if (backend === "github" && !options.repo) {
+    console.log(chalk.red("GitHub backend requires --repo <owner/repo>"));
+    console.log(chalk.dim("  Example: skillsmanager registry create --backend github --repo owner/my-repo"));
+    return;
+  }
 
-      let config: Config = { registries: [], collections: [], skills: {}, discoveredAt: new Date().toISOString() };
-      if (fs.existsSync(CONFIG_PATH)) {
-        try { config = readConfig(); } catch { /* use default */ }
-      }
-      config.registries.push(registry);
-      writeConfig(config);
-    } catch (err) {
-      spinner.fail(`Failed: ${(err as Error).message}`);
+  const label = backend === "local" ? "locally" : `in ${backend}`;
+  const spinner = ora(`Creating registry ${label}...`).start();
+  try {
+    let registry: RegistryInfo;
+    if (backend === "github") {
+      registry = await new GithubBackend().createRegistry(undefined, options.repo);
+    } else {
+      registry = await (await resolveBackend(backend)).createRegistry();
     }
-  } else {
-    console.log(chalk.red(`Unknown backend "${backend}". Supported: local, gdrive`));
+    spinner.succeed(`Registry created ${label}`);
+
+    let config: Config = { registries: [], collections: [], skills: {}, discoveredAt: new Date().toISOString() };
+    if (fs.existsSync(CONFIG_PATH)) {
+      try { config = readConfig(); } catch { /* use default */ }
+    }
+    config.registries.push(registry);
+    writeConfig(config);
+  } catch (err) {
+    spinner.fail(`Failed: ${(err as Error).message}`);
   }
 }
 
@@ -65,9 +63,7 @@ export async function registryListCommand(): Promise<void> {
     console.log(`\n${chalk.bold(reg.name)} ${chalk.dim(`(${reg.backend})`)}`);
 
     try {
-      const backend = reg.backend === "gdrive"
-        ? new GDriveBackend(await ensureAuth())
-        : new LocalBackend();
+      const backend = await resolveBackend(reg.backend);
       const data = await backend.readRegistry(reg);
 
       if (data.collections.length === 0) {
@@ -89,10 +85,7 @@ export async function registryDiscoverCommand(options: { backend?: string }): Pr
   const spinner = ora(`Discovering registries in ${backendName}...`).start();
 
   try {
-    const backend = backendName === "gdrive"
-      ? new GDriveBackend(await ensureAuth())
-      : new LocalBackend();
-
+    const backend = await resolveBackend(backendName);
     const fresh = await backend.discoverRegistries();
 
     let config: Config = { registries: [], collections: [], skills: {}, discoveredAt: new Date().toISOString() };
@@ -134,9 +127,7 @@ export async function registryAddCollectionCommand(
 
   // Use first registry
   const reg = config.registries[0];
-  const backend = reg.backend === "gdrive"
-    ? new GDriveBackend(await ensureAuth())
-    : new LocalBackend();
+  const backend = await resolveBackend(reg.backend);
 
   const data = await backend.readRegistry(reg);
   const existing = data.collections.find((c) => c.name === collectionName);
@@ -171,9 +162,7 @@ export async function registryRemoveCollectionCommand(
   }
 
   const reg = config.registries[0];
-  const backend = reg.backend === "gdrive"
-    ? new GDriveBackend(await ensureAuth())
-    : new LocalBackend();
+  const backend = await resolveBackend(reg.backend);
 
   const data = await backend.readRegistry(reg);
   const ref = data.collections.find((c) => c.name === collectionName);
@@ -186,9 +175,7 @@ export async function registryRemoveCollectionCommand(
   if (options.delete) {
     const collectionInConfig = config.collections.find((c) => c.name === collectionName);
     if (collectionInConfig) {
-      const collBackend = collectionInConfig.backend === "gdrive"
-        ? new GDriveBackend(await ensureAuth())
-        : new LocalBackend();
+      const collBackend = await resolveBackend(collectionInConfig.backend);
 
       const spinner = ora(`Deleting collection "${collectionName}" from ${collectionInConfig.backend}...`).start();
       try {
@@ -235,11 +222,18 @@ export async function registryRemoveCollectionCommand(
   }
 }
 
-export async function registryPushCommand(options: { backend?: string }): Promise<void> {
+export async function registryPushCommand(options: { backend?: string; repo?: string }): Promise<void> {
   const targetBackend = options.backend ?? "gdrive";
 
-  if (targetBackend !== "gdrive") {
-    console.log(chalk.red(`Push to "${targetBackend}" not yet supported. Use: --backend gdrive`));
+  const supportedPush = ["gdrive", "github"];
+  if (!supportedPush.includes(targetBackend)) {
+    console.log(chalk.red(`Push to "${targetBackend}" not yet supported. Use: --backend gdrive or --backend github`));
+    return;
+  }
+
+  if (targetBackend === "github" && !options.repo) {
+    console.log(chalk.red("GitHub backend requires --repo <owner/repo>"));
+    console.log(chalk.dim("  Example: skillsmanager registry push --backend github --repo owner/my-repo"));
     return;
   }
 
@@ -249,7 +243,6 @@ export async function registryPushCommand(options: { backend?: string }): Promis
     return;
   }
 
-  // Find local registry
   const localReg = config.registries.find((r) => r.backend === "local");
   if (!localReg) {
     console.log(chalk.yellow("No local registry to push."));
@@ -265,48 +258,47 @@ export async function registryPushCommand(options: { backend?: string }): Promis
     return;
   }
 
-  const auth = await ensureAuth();
-  const gdrive = new GDriveBackend(auth);
+  const remote = await resolveBackend(targetBackend);
 
-  // ── Phase 1: Upload all collections (no state changes yet) ─────────────
-  // If any collection fails, we abort and nothing is committed.
+  const spinner = ora(`Pushing collections to ${targetBackend}...`).start();
 
-  const spinner = ora("Pushing collections to Google Drive...").start();
-
-  // Discover or create gdrive registry (this is safe — an empty registry is harmless)
-  let gdriveReg = config.registries.find((r) => r.backend === "gdrive");
-  if (!gdriveReg) {
-    spinner.text = "Creating registry in Google Drive...";
-    gdriveReg = await gdrive.createRegistry();
+  // Find or create target registry
+  let targetReg = config.registries.find((r) => r.backend === targetBackend);
+  if (!targetReg) {
+    spinner.text = `Creating registry in ${targetBackend}...`;
+    targetReg = await remote.createRegistry();
   }
 
-  // Accumulate results — only commit if ALL succeed
-  const pushed: { ref: typeof localCollectionRefs[0]; driveCol: CollectionInfo; folderName: string }[] = [];
+  // Phase 1: Upload all collections — abort on any failure
+  const pushed: { ref: typeof localCollectionRefs[0]; remoteCol: CollectionInfo }[] = [];
 
   try {
     for (const ref of localCollectionRefs) {
       spinner.text = `Uploading collection "${ref.name}"...`;
 
       const collInfo = await local.resolveCollectionRef(ref);
-      if (!collInfo) {
-        throw new Error(`Collection "${ref.name}" not found locally`);
-      }
+      if (!collInfo) throw new Error(`Collection "${ref.name}" not found locally`);
 
-      const PREFIX = "SKILLS_";
-      const folderName = `${PREFIX}${ref.name.toUpperCase()}`;
-      const driveCol = await gdrive.createCollection(folderName);
+      let remoteCol: CollectionInfo;
+      if (targetBackend === "gdrive") {
+        const gdrive = remote as import("../backends/gdrive.js").GDriveBackend;
+        const folderName = `SKILLS_${ref.name.toUpperCase()}`;
+        remoteCol = await gdrive.createCollection(folderName);
+      } else {
+        const github = remote as import("../backends/github.js").GithubBackend;
+        remoteCol = await github.createCollection(ref.name, options.repo);
+      }
 
       const colData = await local.readCollection({ ...collInfo, id: "temp" });
       for (const skill of colData.skills) {
         const localSkillPath = path.join(collInfo.folderId, skill.name);
         if (fs.existsSync(localSkillPath)) {
           spinner.text = `Uploading ${ref.name}/${skill.name}...`;
-          await gdrive.uploadSkill(driveCol, localSkillPath, skill.name);
+          await remote.uploadSkill(remoteCol, localSkillPath, skill.name);
         }
       }
-      await gdrive.writeCollection(driveCol, colData);
-
-      pushed.push({ ref, driveCol, folderName });
+      await remote.writeCollection(remoteCol, colData);
+      pushed.push({ ref, remoteCol });
     }
   } catch (err) {
     spinner.fail(`Push failed: ${(err as Error).message}`);
@@ -314,42 +306,38 @@ export async function registryPushCommand(options: { backend?: string }): Promis
     return;
   }
 
-  // ── Phase 2: Commit — update registry and config atomically ────────────
-
+  // Phase 2: Commit — update registry and config atomically
   spinner.text = "Updating registry...";
 
   try {
-    // Read current gdrive registry (may already have entries)
-    let gdriveData: import("../types.js").RegistryFile;
+    let targetData: import("../types.js").RegistryFile;
     try {
-      gdriveData = await gdrive.readRegistry(gdriveReg);
+      targetData = await remote.readRegistry(targetReg);
     } catch {
-      gdriveData = { name: gdriveReg.name, owner: await gdrive.getOwner(), source: "gdrive", collections: [] };
+      targetData = { name: targetReg.name, owner: await remote.getOwner(), source: targetBackend, collections: [] };
     }
 
-    // Add all pushed collections at once
-    for (const { ref, folderName } of pushed) {
-      gdriveData.collections.push({ name: ref.name, backend: "gdrive", ref: folderName });
+    for (const { ref, remoteCol } of pushed) {
+      targetData.collections.push({ name: ref.name, backend: targetBackend, ref: remoteCol.folderId });
     }
-    await gdrive.writeRegistry(gdriveReg, gdriveData);
+    await remote.writeRegistry(targetReg, targetData);
 
-    // Update local config
-    if (!config.registries.find((r) => r.id === gdriveReg!.id)) {
-      config.registries.push(gdriveReg);
+    if (!config.registries.find((r) => r.id === targetReg!.id)) {
+      config.registries.push(targetReg);
     }
-    for (const { driveCol } of pushed) {
-      config.collections.push(driveCol);
+    for (const { remoteCol } of pushed) {
+      config.collections.push(remoteCol);
     }
     writeConfig(config);
 
-    spinner.succeed(`Pushed ${pushed.length} collection(s) to Google Drive`);
+    spinner.succeed(`Pushed ${pushed.length} collection(s) to ${targetBackend}`);
     for (const { ref } of pushed) {
-      console.log(chalk.dim(`  ${ref.name} → gdrive`));
+      console.log(chalk.dim(`  ${ref.name} → ${targetBackend}`));
     }
   } catch (err) {
     spinner.fail(`Failed to update registry: ${(err as Error).message}`);
     console.log(chalk.dim("  Collections were uploaded but the registry was not updated."));
-    console.log(chalk.dim("  Run 'skillsmanager registry push' again to retry."));
+    console.log(chalk.dim(`  Run 'skillsmanager registry push --backend ${targetBackend}' again to retry.`));
   }
 }
 

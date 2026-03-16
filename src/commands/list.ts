@@ -1,13 +1,15 @@
 import chalk from "chalk";
 import ora from "ora";
+import { readConfig } from "../config.js";
+import { resolveBackend } from "../backends/resolve.js";
 import type { ResolvedSkill } from "../types.js";
-import { ensureReady } from "../ready.js";
 
 export async function getAllSkills(): Promise<ResolvedSkill[]> {
-  const { config, backend } = await ensureReady();
+  const config = readConfig();
   const allSkills: ResolvedSkill[] = [];
 
   for (const collection of config.collections) {
+    const backend = await resolveBackend(collection.backend);
     const col = await backend.readCollection(collection);
     for (const entry of col.skills) {
       allSkills.push({ entry, collection });
@@ -49,7 +51,7 @@ export async function listCommand(): Promise<void> {
       a.entry.name.localeCompare(b.entry.name)
     )) {
       console.log(
-        `  ${chalk.cyan(s.entry.name.padEnd(maxName + 2))}${s.entry.description.padEnd(maxDesc + 2)}${chalk.dim(`gdrive:${s.collection.name}`)}`
+        `  ${chalk.cyan(s.entry.name.padEnd(maxName + 2))}${s.entry.description.padEnd(maxDesc + 2)}${chalk.dim(`${s.collection.backend}:${s.collection.name}`)}`
       );
     }
 

@@ -2,8 +2,8 @@ import chalk from "chalk";
 import ora from "ora";
 import path from "path";
 import { getCachePath, ensureCachePath, createSymlink, type Scope } from "../cache.js";
-import { ensureReady } from "../ready.js";
-import { trackSkill } from "../config.js";
+import { readConfig, trackSkill } from "../config.js";
+import { resolveBackend } from "../backends/resolve.js";
 
 export async function fetchCommand(
   names: string[],
@@ -15,14 +15,15 @@ export async function fetchCommand(
     return;
   }
 
-  const { config, backend } = await ensureReady();
+  const config = readConfig();
 
-  // Gather all skills across collections
+  // Gather all skills across collections (resolve backend per collection)
   const allSkills = [];
   for (const collection of config.collections) {
+    const backend = await resolveBackend(collection.backend);
     const col = await backend.readCollection(collection);
     for (const entry of col.skills) {
-      allSkills.push({ entry, collection });
+      allSkills.push({ entry, collection, backend });
     }
   }
 
@@ -42,7 +43,7 @@ export async function fetchCommand(
       ensureCachePath(match.collection);
       const cachePath = getCachePath(match.collection, name);
 
-      await backend.downloadSkill(match.collection, name, cachePath);
+      await match.backend.downloadSkill(match.collection, name, cachePath);
       const { skillsDir, created } = createSymlink(name, cachePath, options.agent, scope, cwd);
       trackSkill(name, match.collection.id, path.join(skillsDir, name));
 
