@@ -4,9 +4,10 @@ import os from "os";
 import readline from "readline";
 import { execSync, spawnSync } from "child_process";
 import chalk from "chalk";
-import { CREDENTIALS_PATH, TOKEN_PATH, ensureConfigDir } from "../../config.js";
+import { CREDENTIALS_PATH, TOKEN_PATH, ensureConfigDir, CONFIG_PATH, readConfig } from "../../config.js";
 import { runAuthFlow, hasToken, getAuthedEmail } from "../../auth.js";
 import { credentialsExist } from "../../config.js";
+import { LocalBackend } from "../../backends/local.js";
 
 // ─── Prompt helpers ──────────────────────────────────────────────────────────
 
@@ -146,6 +147,24 @@ function openUrl(url: string): void {
   try { execSync(`${cmd} "${url}"`, { stdio: "ignore" }); } catch { /* ignore */ }
 }
 
+// ─── Post-auth nudge ─────────────────────────────────────────────────────────
+
+async function printPushNudgeIfNeeded(): Promise<void> {
+  if (!fs.existsSync(CONFIG_PATH)) return;
+  try {
+    const config = readConfig();
+    const localReg = config.registries.find((r) => r.backend === "local");
+    if (!localReg) return;
+    const local = new LocalBackend();
+    const localData = await local.readRegistry(localReg);
+    const localCollections = localData.collections.filter((c) => c.backend === "local");
+    if (localCollections.length === 0) return;
+    const names = localCollections.map((c) => chalk.cyan(c.name)).join(", ");
+    console.log(chalk.yellow(`\n  Found local registry with ${localCollections.length} collection(s): ${names}`));
+    console.log(chalk.dim(`  Run ${chalk.white("skillsmanager registry push --backend gdrive")} to back them up to Google Drive.\n`));
+  } catch { /* unreadable config, skip hint */ }
+}
+
 // ─── Main command ─────────────────────────────────────────────────────────────
 
 export async function setupGoogleCommand(): Promise<void> {
@@ -156,14 +175,16 @@ export async function setupGoogleCommand(): Promise<void> {
     console.log(chalk.green("  ✓ credentials.json found"));
     if (hasToken()) {
       console.log(chalk.green("  ✓ Already authenticated — nothing to do."));
-      console.log(`\nRun ${chalk.bold("skillsmanager init")} to discover registries.\n`);
+      await printPushNudgeIfNeeded();
+      console.log(`Run ${chalk.bold("skillsmanager refresh")} to discover registries.\n`);
       return;
     }
     console.log(chalk.yellow("  ✗ Not yet authenticated — starting OAuth flow...\n"));
     const client = await runAuthFlow();
     const authedEmail = await getAuthedEmail(client);
     console.log(chalk.green(`\n  ✓ Authenticated successfully${authedEmail ? ` as ${chalk.white(authedEmail)}` : ""}.`));
-    console.log(`\nRun ${chalk.bold("skillsmanager init")} to discover registries.\n`);
+    await printPushNudgeIfNeeded();
+    console.log(`Run ${chalk.bold("skillsmanager refresh")} to discover registries.\n`);
     return;
   }
 
@@ -323,7 +344,8 @@ export async function setupGoogleCommand(): Promise<void> {
   const client = await runAuthFlow();
   const authedEmail = await getAuthedEmail(client);
   console.log(chalk.green(`\n  ✓ Setup complete! Authenticated as ${chalk.white(authedEmail ?? account)}`));
-  console.log(`\nRun ${chalk.bold("skillsmanager init")} to discover your registries.\n`);
+  await printPushNudgeIfNeeded();
+  console.log(`Run ${chalk.bold("skillsmanager refresh")} to discover your registries.\n`);
 }
 
 function printManualInstructions(): void {

@@ -41,6 +41,25 @@ export async function registryCreateCommand(options: { backend?: string; repo?: 
     }
     config.registries.push(registry);
     writeConfig(config);
+
+    if (backend !== "local") {
+      const localReg = config.registries.find((r) => r.backend === "local");
+      if (localReg) {
+        const local = new LocalBackend();
+        try {
+          const localData = await local.readRegistry(localReg);
+          const localCollections = localData.collections.filter((c) => c.backend === "local");
+          if (localCollections.length > 0) {
+            const names = localCollections.map((c) => chalk.cyan(c.name)).join(", ");
+            console.log(chalk.yellow(`\n  Found local registry with ${localCollections.length} collection(s): ${names}`));
+            const pushCmd = backend === "github"
+              ? `skillsmanager registry push --backend github --repo ${options.repo}`
+              : `skillsmanager registry push --backend ${backend}`;
+            console.log(chalk.dim(`  Run ${chalk.white(pushCmd)} to back them up to ${backend}.\n`));
+          }
+        } catch { /* local registry unreadable, skip hint */ }
+      }
+    }
   } catch (err) {
     spinner.fail(`Failed: ${(err as Error).message}`);
   }
