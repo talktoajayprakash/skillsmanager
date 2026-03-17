@@ -90,12 +90,6 @@ When Skills Manager needs to find skills, it runs two phases:
 3. Resolve each ref to a concrete collection via `resolveCollectionRef()`
 4. No scanning needed — the registry is the source of truth
 
-### Phase 2 — Orphan fallback
-
-1. Scan the backend for `SKILLS_COLLECTION.yaml` (or legacy `SKILLS_SYNC.yaml`) directly
-2. Collections found here that aren't already known from Phase 1 are added
-3. Ensures backwards compatibility with collections created before the registry existed
-
 ---
 
 ## UUID strategy
@@ -154,7 +148,6 @@ interface StorageBackend {
   getOwner(): Promise<string>;
 
   // Collections
-  discoverCollections(): Promise<Omit<CollectionInfo, "id">[]>;
   readCollection(collection: CollectionInfo): Promise<CollectionFile>;
   writeCollection(collection: CollectionInfo, data: CollectionFile): Promise<void>;
   downloadSkill(collection: CollectionInfo, skillName: string, destDir: string): Promise<void>;
@@ -169,7 +162,7 @@ interface StorageBackend {
 }
 ```
 
-Note: `discoverCollections` and `discoverRegistries` return without `id` — UUID assignment is handled by the config layer (`mergeCollections()`, `mergeRegistries()`), not the backend. This keeps backends storage-agnostic.
+Note: `discoverRegistries` returns without `id` — UUID assignment is handled by the config layer (`mergeRegistries()`), not the backend. This keeps backends storage-agnostic.
 
 ---
 
@@ -233,7 +226,6 @@ One copy on disk. Many agents. Update the cache once — all agents pick up the 
 | Scenario | Behavior |
 |---|---|
 | Old `SKILLS_SYNC.yaml` | Read and recognized normally |
-| No registry exists | Falls back to direct collection scan (Phase 2 only) |
 | Config missing `registries` field | Backfilled to `[]` |
 | Mix of local + remote collections | Both appear in unified skill list |
 | Remote registry with `backend: local` refs | Prevented by `registry push` |
