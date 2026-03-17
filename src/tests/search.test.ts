@@ -103,7 +103,7 @@ describe("bm25Search", () => {
 
 let tmpConfigDir: string;
 let tmpCacheDir: string;
-let fakeCollection: { id: string; name: string; folderId: string };
+let fakeCollection: { id: string; name: string; folderId: string; backend: string };
 
 function makeTmpDir(): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), "skillsmanager-search-test-"));
@@ -115,24 +115,25 @@ const mockSkills = [
   { name: "draft_social_post",   path: "draft_social_post/",   description: "Drafts a social media post for any platform" },
 ];
 
-vi.mock("../ready.js", () => ({
-  ensureReady: async () => ({
-    config: JSON.parse(fs.readFileSync(path.join(tmpConfigDir, "config.json"), "utf-8")),
-    backend: {
-      readCollection: vi.fn(async () => ({ name: "my_skills", owner: "test@example.com", skills: mockSkills })),
-    },
+vi.mock("../backends/resolve.js", () => ({
+  resolveBackend: async () => ({
+    readCollection: vi.fn(async () => ({ name: "my_skills", owner: "test@example.com", skills: mockSkills })),
   }),
 }));
 
 vi.mock("../config.js", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../config.js")>();
-  return { ...actual, get CACHE_DIR() { return tmpCacheDir; } };
+  return {
+    ...actual,
+    get CACHE_DIR() { return tmpCacheDir; },
+    readConfig: () => JSON.parse(fs.readFileSync(path.join(tmpConfigDir, "config.json"), "utf-8")),
+  };
 });
 
 beforeEach(() => {
   tmpConfigDir = makeTmpDir();
   tmpCacheDir = makeTmpDir();
-  fakeCollection = { id: "test-uuid", name: "my_skills", folderId: "gdrive-id" };
+  fakeCollection = { id: "test-uuid", name: "my_skills", folderId: "gdrive-id", backend: "gdrive" };
   fs.writeFileSync(
     path.join(tmpConfigDir, "config.json"),
     JSON.stringify({ collections: [fakeCollection], skills: {}, discoveredAt: new Date().toISOString() }, null, 2)

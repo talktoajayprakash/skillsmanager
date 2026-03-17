@@ -71,7 +71,7 @@ let tmpCacheDir: string;
 let tmpAgentDir: string;
 let tmpSkillsDir: string;
 let mockBackend: ReturnType<typeof makeMockBackend>;
-let fakeCollection: { id: string; name: string; folderId: string };
+let fakeCollection: { id: string; name: string; folderId: string; backend: string };
 
 // We use vi.mock at module scope with a factory that reads from closure vars
 // that are set up per-test in beforeEach.
@@ -115,11 +115,8 @@ vi.mock("../config.js", async (importOriginal) => {
   };
 });
 
-vi.mock("../ready.js", () => ({
-  ensureReady: async () => ({
-    config: JSON.parse(fs.readFileSync(path.join(tmpConfigDir, "config.json"), "utf-8")),
-    backend: mockBackend,
-  }),
+vi.mock("../backends/resolve.js", () => ({
+  resolveBackend: async () => mockBackend,
 }));
 
 vi.mock("../types.js", async (importOriginal) => {
@@ -140,7 +137,7 @@ beforeEach(() => {
   tmpAgentDir = makeTmpDir();
   tmpSkillsDir = makeTmpDir();
 
-  fakeCollection = { id: "test-uuid-1234", name: "my_skills", folderId: "gdrive-folder-id" };
+  fakeCollection = { id: "test-uuid-1234", name: "my_skills", folderId: "gdrive-folder-id", backend: "local" };
 
   mockBackend = makeMockBackend(makeTmpDir());
 

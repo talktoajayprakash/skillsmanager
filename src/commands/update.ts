@@ -3,7 +3,8 @@ import ora from "ora";
 import fs from "fs";
 import YAML from "yaml";
 import path from "path";
-import { ensureReady } from "../ready.js";
+import { readConfig } from "../config.js";
+import { resolveBackend } from "../backends/resolve.js";
 import { getCachePath, ensureCachePath } from "../cache.js";
 
 export async function updateCommand(
@@ -37,7 +38,7 @@ export async function updateCommand(
     return;
   }
 
-  const { config, backend } = await ensureReady();
+  const config = readConfig();
 
   // Find the collection — --collection override, or look up by installedAt path, or by name
   let collection = config.collections.find((c) => c.name === options.collection) ?? null;
@@ -73,7 +74,8 @@ export async function updateCommand(
     }
   }
 
-  const spinner = ora(`Updating ${chalk.bold(skillName)} in gdrive:${collection.name}...`).start();
+  const backend = await resolveBackend(collection.backend);
+  const spinner = ora(`Updating ${chalk.bold(skillName)} in ${collection.backend}:${collection.name}...`).start();
 
   try {
     await backend.uploadSkill(collection, absPath, skillName);
@@ -93,7 +95,7 @@ export async function updateCommand(
       }
     }
 
-    spinner.succeed(`${chalk.bold(skillName)} updated in gdrive:${collection.name}`);
+    spinner.succeed(`${chalk.bold(skillName)} updated in ${collection.backend}:${collection.name}`);
   } catch (err) {
     spinner.fail(`Failed: ${(err as Error).message}`);
   }
