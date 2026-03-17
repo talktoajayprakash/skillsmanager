@@ -42,6 +42,13 @@ jobs:
             --generate-notes
 
       - name: Publish to npm
-        run: npm publish --access public
+        run: |
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          PKG_NAME=$(node -p "require('./package.json').name")
+          if npm view "${PKG_NAME}@${PKG_VERSION}" version &>/dev/null; then
+            echo "Version ${PKG_VERSION} already published — skipping."
+          else
+            npm publish --access public
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
