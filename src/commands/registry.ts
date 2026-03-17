@@ -289,11 +289,28 @@ export async function registryPushCommand(options: { backend?: string; repo?: st
     targetReg = await remote.createRegistry();
   }
 
-  // Phase 1: Upload all collections — abort on any failure
+  // Read remote registry upfront to know what's already synced
+  let remoteData: import("../types.js").RegistryFile;
+  try {
+    remoteData = await remote.readRegistry(targetReg);
+  } catch {
+    remoteData = { name: targetReg.name, owner: await remote.getOwner(), source: targetBackend, collections: [] };
+  }
+  const alreadySynced = new Set(remoteData.collections.map((c) => c.name));
+
+  // Skip collections already present in the remote registry
+  const toUpload = localCollectionRefs.filter((ref) => !alreadySynced.has(ref.name));
+
+  if (toUpload.length === 0) {
+    spinner.succeed("Remote registry is already up to date.");
+    return;
+  }
+
+  // Phase 1: Upload new collections — abort on any failure
   const pushed: { ref: typeof localCollectionRefs[0]; remoteCol: CollectionInfo }[] = [];
 
   try {
-    for (const ref of localCollectionRefs) {
+    for (const ref of toUpload) {
       spinner.text = `Uploading collection "${ref.name}"...`;
 
       const collInfo = await local.resolveCollectionRef(ref);
@@ -330,17 +347,12 @@ export async function registryPushCommand(options: { backend?: string; repo?: st
   spinner.text = "Updating registry...";
 
   try {
-    let targetData: import("../types.js").RegistryFile;
-    try {
-      targetData = await remote.readRegistry(targetReg);
-    } catch {
-      targetData = { name: targetReg.name, owner: await remote.getOwner(), source: targetBackend, collections: [] };
-    }
-
     for (const { ref, remoteCol } of pushed) {
-      targetData.collections.push({ name: ref.name, backend: targetBackend, ref: remoteCol.folderId });
+      if (!remoteData.collections.find((c) => c.name === ref.name)) {
+        remoteData.collections.push({ name: ref.name, backend: targetBackend, ref: remoteCol.folderId });
+      }
     }
-    await remote.writeRegistry(targetReg, targetData);
+    await remote.writeRegistry(targetReg, remoteData);
 
     if (!config.registries.find((r) => r.id === targetReg!.id)) {
       config.registries.push(targetReg);

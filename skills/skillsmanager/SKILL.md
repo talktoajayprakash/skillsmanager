@@ -11,6 +11,7 @@ Skills Manager is a CLI tool for managing agent skills stored locally or in remo
 
 - Local storage works out of the box — no setup needed.
 - For Google Drive: a human must run `skillsmanager setup google` once to configure credentials.
+- For GitHub: requires the `gh` CLI to be installed and authenticated (`gh auth login`). No additional skillsmanager setup needed.
 - All commands except `setup google` are non-interactive and designed for agent use.
 
 ## Commands
@@ -76,17 +77,24 @@ skillsmanager registry create
 # Create a registry in Google Drive
 skillsmanager registry create --backend gdrive
 
+# Create a registry in a GitHub repo (creates repo if it doesn't exist)
+skillsmanager registry create --backend github --repo <owner/repo>
+
 # Show all registries and their collection references
 skillsmanager registry list
 
 # Search a backend for registries owned by the current user
 skillsmanager registry discover --backend gdrive
+skillsmanager registry discover --backend github
 
 # Add a collection reference to the registry
 skillsmanager registry add-collection <name>
 
-# Push local registry and collections to Google Drive
+# Push local registry and collections to Google Drive (safe to re-run — skips already-synced collections)
 skillsmanager registry push --backend gdrive
+
+# Push local registry and collections to GitHub (safe to re-run — skips already-synced collections)
+skillsmanager registry push --backend github --repo <owner/repo>
 
 # Remove a collection reference from the registry (keeps data)
 skillsmanager registry remove-collection <name>
@@ -94,8 +102,11 @@ skillsmanager registry remove-collection <name>
 # Remove and permanently delete the collection and all its skills
 skillsmanager registry remove-collection <name> --delete
 
-# Create a new collection
+# Create a new collection (local by default)
 skillsmanager collection create [name]
+
+# Create a collection in a GitHub repo
+skillsmanager collection create [name] --backend github --repo <owner/repo>
 
 # Re-discover collections from storage
 skillsmanager refresh
@@ -141,6 +152,13 @@ skillsmanager uninstall
 1. `skillsmanager setup google` (one-time, human-only)
 2. `skillsmanager registry push --backend gdrive`
 
+**User wants to store skills in a GitHub repo:**
+1. `skillsmanager collection create <name> --backend github --repo <owner/repo>` — creates the GitHub repo if needed, and auto-registers the collection in the existing registry (or creates a local registry if none exists)
+2. `skillsmanager add <path> --collection <name>` — upload the skill into that collection
+
+**User wants to discover GitHub-hosted collections:**
+1. `skillsmanager registry discover --backend github`
+
 **User wants to see what registries and collections exist:**
 1. `skillsmanager registry list`
 
@@ -156,7 +174,7 @@ skillsmanager uninstall
 
 - **Registry** (`SKILLS_REGISTRY.yaml`): root index pointing to all collections across backends
 - **Collection** (`SKILLS_COLLECTION.yaml`): folder of skills with an index file
-- **Backends**: `local` (default, `~/.skillsmanager/`) and `gdrive` (Google Drive)
+- **Backends**: `local` (default, `~/.skillsmanager/`), `gdrive` (Google Drive), and `github` (GitHub repo via `gh` CLI)
 - **Cache**: skills are cached at `~/.skillsmanager/cache/<uuid>/` and symlinked to agent directories
 - **Symlinks**: all agents share one cached copy — updating the cache updates all agents
 

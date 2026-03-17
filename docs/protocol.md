@@ -57,6 +57,7 @@ collections:
 **Rules:**
 - A remote registry (e.g. `source: gdrive`) cannot contain `backend: local` collection refs. Local paths don't resolve on other machines.
 - `skillsmanager registry push` enforces this — it uploads all local collections to the target backend and rewrites refs before pushing.
+- A registry can reference collections on **any** backend — e.g. a gdrive registry can point to both gdrive and github collections. The backend field on each collection ref determines how it is resolved.
 
 ### SKILLS_COLLECTION.yaml
 
@@ -111,30 +112,46 @@ This means cache paths don't break when you rename a collection or move it betwe
 | Registry location | Can reference | Cannot reference |
 |---|---|---|
 | Local (`~/.skillsmanager/`) | Local collections, remote collections | — |
-| Remote (Google Drive, GitHub, etc.) | Remote collections only | Local collections |
+| Remote (Google Drive, GitHub, etc.) | Remote collections on any backend | Local collections |
 
 **Why:** A remote registry pointing to `backend: local` is broken by design — another machine or agent reading it has no way to resolve a local path.
 
 ---
 
+## Collection create invariant
+
+**A collection can never exist without being registered.** `skillsmanager collection create` atomically:
+
+1. Creates the collection on the target backend (gdrive or github)
+2. Ensures a registry exists — if none is configured, a local registry is created automatically
+3. Registers the new collection ref in the registry, writing directly to the registry's backend
+
+This means `registry add-collection` is never a required follow-up step. It exists only for manually registering collections discovered through other means (e.g. a colleague's shared collection).
+
+---
+
 ## Transactional push
 
-`skillsmanager registry push --backend gdrive` is **all-or-nothing**.
+`skillsmanager registry push --backend gdrive` (or `--backend github`) is **all-or-nothing** and **idempotent**.
+
+**Idempotency:** Before uploading anything, the command reads the current remote registry and builds a set of already-synced collection names. Collections already present in the remote registry are skipped entirely — no duplicate entries, safe to re-run at any time.
 
 **Phase 1 — Upload (no state changes yet):**
 1. Authenticate with the target backend
 2. Create or locate the remote registry
-3. For each `backend: local` collection:
+3. Read the remote registry to determine which collections are already synced
+4. For each `backend: local` collection **not already in the remote registry**:
    - Create the remote folder
    - Upload all skill files
    - Write `SKILLS_COLLECTION.yaml`
-4. Accumulate results in memory only
-5. If any upload fails → abort. Local state is completely untouched.
+5. Accumulate results in memory only
+6. If any upload fails → abort. Local state is completely untouched.
 
 **Phase 2 — Commit (only after all uploads succeed):**
-1. Write all new collection refs to the remote registry in a single `writeRegistry()` call
-2. Update local `config.json` with the new remote collections and registry
-3. Print success summary
+1. Append new collection refs to the already-read remote registry data (dedup guard included)
+2. Write updated registry in a single `writeRegistry()` call
+3. Update local `config.json` with the new remote collections and registry
+4. Print success summary
 
 ---
 

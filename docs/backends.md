@@ -50,18 +50,21 @@ Folder naming in Drive: all folders are prefixed with `SKILLS_` to avoid conflic
 
 ---
 
-## GitHub *(planned)*
+## GitHub
 
-Skills in a Git repository. `SKILLS_REGISTRY.yaml` at the repo root, collection folders as subdirectories.
+Skills in a Git repository. Uses the `gh` CLI (must be installed and authenticated via `gh auth login`). No additional Skills Manager setup needed.
 
 ```
 my-skills-repo/
-├── SKILLS_REGISTRY.yaml
-└── my-collection/
-    ├── SKILLS_COLLECTION.yaml
-    └── code-review/
-        └── SKILL.md
+└── .skillsmanager/
+    ├── SKILLS_REGISTRY.yaml
+    └── my-collection/
+        ├── SKILLS_COLLECTION.yaml
+        └── code-review/
+            └── SKILL.md
 ```
+
+Skills Manager clones the repo into `~/.skillsmanager/github-workdir/` on first use and keeps it up to date with `git pull`. Writes go through a commit + push cycle; if direct push is blocked by branch protection, a PR is created automatically.
 
 **Best for:** team sharing with full version history, open-source skill libraries, PR-based review workflows.
 

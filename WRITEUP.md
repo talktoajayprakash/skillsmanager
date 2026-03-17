@@ -36,19 +36,34 @@ description: Writes clear, concise LinkedIn posts with proper formatting
 
 ## Core Concepts
 
+### Registry
+
+A **registry** (`SKILLS_REGISTRY.yaml`) is the root index. It lists all collections the user has access to, each as a backend-typed ref. A registry can reference collections on any backend — e.g. a gdrive registry can point to both gdrive and github collections.
+
+```yaml
+name: my-registry
+owner: you@example.com
+source: gdrive
+collections:
+  - name: personal
+    backend: gdrive
+    ref: SKILLS_PERSONAL         # Drive folder name
+  - name: work-tools
+    backend: github
+    ref: owner/repo:.skillsmanager/work-tools
+```
+
+A local registry (`~/.skillsmanager/registry.yaml`) can additionally reference local collections. A remote registry cannot — local paths don't resolve on other machines.
+
+**Registry is always present.** `collection create` ensures a registry exists before creating a collection, auto-creating a local one if needed. A collection can never exist in an unregistered state.
+
 ### Collections
 
-A **collection** is a folder in remote storage containing a `SKILLS_SYNC.yaml` file and skill subdirectories. It's the unit of organization — one person might have one collection (`MY_SKILLS`), or multiple (`personal`, `work`).
-
-Collections are automatically discovered by searching for any `SKILLS_SYNC.yaml` owned by the authenticated user.
-
-### `SKILLS_SYNC.yaml`
-
-The registry file that indexes all skills in a collection:
+A **collection** is a folder containing a `SKILLS_COLLECTION.yaml` index and skill subdirectories. It's the unit of organization — one person might have one collection (`personal`), or multiple (`personal`, `work`).
 
 ```yaml
 name: personal
-owner: you@gmail.com
+owner: you@example.com
 skills:
   - name: write-linkedin-post
     path: write-linkedin-post/
@@ -58,9 +73,7 @@ skills:
     description: Opinionated code review workflow
 ```
 
-- `name` is the logical name of the collection (without the `SKILLS_` Drive prefix)
-- `owner` is the authenticated user's email
-- Skills are globally unique by name within a collection
+The legacy filename `SKILLS_SYNC.yaml` is still recognized for backwards compatibility.
 
 ### Drive Folder Naming
 
@@ -79,11 +92,11 @@ The prefix is stripped everywhere in the CLI — users and agents always work wi
 ## CLI Commands
 
 ```bash
-# Google Drive setup (human-facing, interactive)
+# Google Drive setup (human-facing, interactive, one-time)
 skillsmanager setup google
+# GitHub: no setup needed — requires gh CLI authenticated via: gh auth login
 
 # Discover / refresh collections
-skillsmanager init
 skillsmanager refresh
 
 # Browse skills
@@ -97,11 +110,20 @@ skillsmanager fetch <name> --agent <agent>
 skillsmanager add <path>
 skillsmanager add <path> --collection <name>
 
-# Push local changes to an existing skill back to Drive
-skillsmanager update <name>
+# Push local changes to an existing skill back to remote
+skillsmanager update <path>
 
-# Manage collections
-skillsmanager collection create [name]
+# Manage collections (auto-registers in the existing registry)
+skillsmanager collection create [name]                                       # gdrive
+skillsmanager collection create [name] --backend github --repo <owner/repo>  # github
+
+# Registry management
+skillsmanager registry list
+skillsmanager registry create [--backend gdrive|github] [--repo <owner/repo>]
+skillsmanager registry push --backend gdrive|github [--repo <owner/repo>]    # idempotent: skips already-synced collections
+skillsmanager registry discover --backend gdrive|github
+skillsmanager registry add-collection <name>
+skillsmanager registry remove-collection <name> [--delete]
 ```
 
 ### Agent-first design
@@ -186,23 +208,41 @@ One copy, many agents. Update once, all agents get the change.
 
 ```json
 {
+  "registries": [
+    {
+      "id": "a1b2c3d4-...",
+      "name": "my-registry",
+      "backend": "gdrive",
+      "folderId": "1bZW0-Nic5D53dBwMH_h7JN_aB0W-Rqyq",
+      "fileId": "1yMuqe7JmelSYqm9TptKBWPk5ThTV5OJo"
+    }
+  ],
   "collections": [
     {
       "id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
       "name": "personal",
       "backend": "gdrive",
       "folderId": "1bZW0-Nic5D53dBwMH_h7JN_aB0W-Rqyq",
-      "registryFileId": "1yMuqe7JmelSYqm9TptKBWPk5ThTV5OJo"
+      "registryFileId": "1yMuqe7JmelSYqm9TptKBWPk5ThTV5OJo",
+      "sourceRegistryId": "a1b2c3d4-..."
     }
   ],
-  "discoveredAt": "2026-03-15T00:06:33.570Z"
+  "skills": {
+    "code-review": [
+      {
+        "collectionId": "f47ac10b-...",
+        "installedAt": ["/Users/you/.claude/skills/code-review"]
+      }
+    ]
+  },
+  "discoveredAt": "2026-03-16T00:06:33.570Z"
 }
 ```
 
-- `id` — stable UUID for the cache path, never changes even if the collection is renamed
-- `name` — logical name (Drive prefix stripped)
-- `folderId` — Drive folder ID, used to match collections across refreshes to preserve UUIDs
-- `registryFileId` — Drive file ID of `SKILLS_SYNC.yaml`, cached to avoid re-searching on every read
+- `registries[].id` — stable UUID, matched across refreshes by `folderId`
+- `collections[].id` — stable UUID for the cache path, never changes even if the collection is renamed
+- `folderId` — backend-specific location identifier, used to match entities across refreshes to preserve UUIDs
+- `sourceRegistryId` — links a collection back to the registry that owns it
 
 ---
 
@@ -212,27 +252,45 @@ The `StorageBackend` interface is the only contract backends must implement:
 
 ```typescript
 interface StorageBackend {
-  discoverCollections(): Promise<Omit<CollectionInfo, "id">[]>;
+  getOwner(): Promise<string>;
   readCollection(collection: CollectionInfo): Promise<CollectionFile>;
   writeCollection(collection: CollectionInfo, data: CollectionFile): Promise<void>;
   downloadSkill(collection: CollectionInfo, skillName: string, destDir: string): Promise<void>;
   uploadSkill(collection: CollectionInfo, localPath: string, skillName: string): Promise<void>;
+  discoverRegistries(): Promise<Omit<RegistryInfo, "id">[]>;
+  readRegistry(registry: RegistryInfo): Promise<RegistryFile>;
+  writeRegistry(registry: RegistryInfo, data: RegistryFile): Promise<void>;
+  resolveCollectionRef(ref: RegistryCollectionRef): Promise<Omit<CollectionInfo, "id"> | null>;
+  createRegistry(name?: string): Promise<RegistryInfo>;
+  createCollection(name: string, repoRef?: string): Promise<CollectionInfo>;
 }
 ```
 
-Note: `discoverCollections` returns without `id` — UUID assignment is handled by the config layer (`mergeCollections()`), not the backend. This keeps backends storage-agnostic.
+Note: `discoverRegistries` returns without `id` — UUID assignment is handled by the config layer (`mergeRegistries()`), not the backend. This keeps backends storage-agnostic.
 
-### Current backend: Google Drive
+### Implemented backends
 
-- Discovery: searches for `SKILLS_SYNC.yaml` owned by the user across all of Drive
+**Local** (`~/.skillsmanager/`)
+- Default backend, no setup needed
+- Registry at `~/.skillsmanager/registry.yaml`, collections under `~/.skillsmanager/collections/`
+- Can reference remote collections in its registry (useful as the local index for cross-backend setups)
+
+**Google Drive**
+- Discovery: searches for `SKILLS_REGISTRY.yaml` owned by the user across all of Drive
 - Download/upload: recursive folder operations via Drive API v3
-- Auth: OAuth2 Desktop app flow, user creates their own Google Cloud project
+- Auth: OAuth2 Desktop app flow — user creates their own Google Cloud project via `skillsmanager setup google`
+- Folder naming: `SKILLS_` prefix to distinguish from regular Drive folders
 
-### Future backends
+**GitHub**
+- Uses the `gh` CLI — requires `gh auth login`, no additional Skills Manager setup
+- Clones repo to `~/.skillsmanager/github-workdir/<owner_repo>/` on first access, `git pull` on subsequent
+- Writes commit directly; falls back to creating a PR if branch protection blocks direct push
+- Skills stored under `.skillsmanager/<collection-name>/` in the repo
 
-- **GitHub** — skills in a repo, `SKILLS_SYNC.yaml` at root, git-based sync
+### Planned backends
+
 - **S3 / R2** — private cloud storage
-- **Local / NFS** — offline or corporate environments
+- **Dropbox** — users already on Dropbox
 
 ---
 
@@ -256,13 +314,17 @@ Note: `discoverCollections` returns without `id` — UUID assignment is handled 
 |---|---|---|
 | CLI name | `skillsmanager` | Avoids conflicts with `sk`, `skills` |
 | Skill structure | Flat, globally unique names | No category nesting — simpler for agents to reference |
-| Registry file | `SKILLS_SYNC.yaml` | Human-readable, lives alongside skills in any storage |
+| Two-tier layout | Registry → Collections → Skills | Registry is the discovery root; collections are independently portable |
+| Collection file | `SKILLS_COLLECTION.yaml` | Human-readable, lives alongside skills in any storage |
 | Terminology | **Collection** not Registry | More natural for personal/shared skill sets |
 | Drive folder prefix | `SKILLS_` | Distinguishes skillsmanager folders from regular Drive folders |
 | Logical name | Strip prefix in YAML + CLI | Users and agents work with clean names, not Drive conventions |
 | Cache path | `~/.skillsmanager/cache/<uuid>/` | UUID is backend-agnostic and stable across renames/migrations |
-| UUID assignment | Config layer (`mergeCollections`) | Backends don't need to know about UUIDs; preserved across refreshes by matching `folderId` |
+| UUID assignment | Config layer (`mergeRegistries`/`mergeCollections`) | Backends don't need to know about UUIDs; preserved across refreshes by matching `folderId` |
 | Auth | Auto-launch OAuth if no token | No explicit `init` required; any command triggers login when needed |
 | Interactive prompts | Only in `setup google` | All other commands are non-interactive — safe for agent use |
-| Drive scope | Full `drive` | Required to discover pre-existing `SKILLS_SYNC.yaml` files not created by the app |
+| Drive scope | Full `drive` | Required to discover pre-existing files not created by the app |
 | Google credentials | User creates own Cloud project | Avoids sharing a single OAuth app; each user controls their own credentials |
+| Collection create → auto-register | Always registers immediately in existing registry | Prevents orphaned collections; registry is auto-created if none exists |
+| `registry push` idempotency | Skip collections already in remote registry | Safe to re-run for incremental updates; no duplicate refs |
+| Direct registry writes | All mutation commands write to registry's own backend immediately | No explicit sync step needed after add/remove operations |
