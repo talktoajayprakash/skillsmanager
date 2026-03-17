@@ -92,6 +92,5 @@ This uploads all local collections to Drive and updates the registry. It's trans
 ## What's next?
 
 - [Usage reference](./usage) — all commands explained
-- [Skill format](./skill-format) — how to write a skill
 - [Protocol spec](./protocol) — registry and collection architecture
 - [Backends](./backends) — storage backend options
