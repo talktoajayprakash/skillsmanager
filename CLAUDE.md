@@ -4,6 +4,12 @@ Skills Manager is a CLI tool for storing and fetching agent skills from local or
 
 For a full understanding of the design, decisions, and architecture read **[WRITEUP.md](./WRITEUP.md)** and **[docs/registry-architecture.md](./docs/registry-architecture.md)**.
 
+## Package
+
+- **npm package**: `@skillsmanager/cli`
+- **Install**: `npm install -g @skillsmanager/cli`
+- **CLI binary**: `skillsmanager`
+
 ## Quick reference
 
 ```bash
