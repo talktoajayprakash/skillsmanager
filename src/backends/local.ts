@@ -166,7 +166,7 @@ export class LocalBackend implements StorageBackend {
 
   // ── Convenience: create a local collection ───────────────────────────────
 
-  async createCollection(name: string): Promise<CollectionInfo> {
+  async createCollection({ name }: import("./interface.js").CreateCollectionOptions): Promise<CollectionInfo> {
     const dir = path.join(COLLECTIONS_DIR, name);
     fs.mkdirSync(dir, { recursive: true });
     const owner = await this.getOwner();

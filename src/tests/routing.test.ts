@@ -44,6 +44,7 @@ function mockInner(col: CollectionFile): StorageBackend {
     writeRegistry: vi.fn().mockResolvedValue(undefined),
     resolveCollectionRef: vi.fn().mockResolvedValue(null),
     createRegistry: vi.fn().mockResolvedValue({} as RegistryInfo),
+    createCollection: vi.fn().mockResolvedValue({} as CollectionInfo),
   };
 }
 

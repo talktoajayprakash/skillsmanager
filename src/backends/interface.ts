@@ -1,5 +1,11 @@
 import type { CollectionFile, CollectionInfo, RegistryCollectionRef, RegistryFile, RegistryInfo } from "../types.js";
 
+export interface CreateCollectionOptions {
+  name: string;
+  repo?: string;       // required for github; ignored by others
+  skillsRepo?: string; // cross-repo skill source (all backends)
+}
+
 export interface StorageBackend {
   // ── Identity ───────────────────────────────────────────────────────────────
   getOwner(): Promise<string>; // identity of the authenticated user (email, username, etc.)
@@ -20,4 +26,5 @@ export interface StorageBackend {
   writeRegistry(registry: RegistryInfo, data: RegistryFile): Promise<void>;
   resolveCollectionRef(ref: RegistryCollectionRef): Promise<Omit<CollectionInfo, "id"> | null>;
   createRegistry(name?: string): Promise<RegistryInfo>;
+  createCollection(options: CreateCollectionOptions): Promise<CollectionInfo>;
 }

@@ -53,7 +53,7 @@ export async function refreshCommand(): Promise<void> {
             const refBackend = await resolveBackend(ref.backend);
             const colInfo = await refBackend.resolveCollectionRef(ref);
             if (colInfo) {
-              freshCollections.push(colInfo);
+              freshCollections.push({ ...colInfo, sourceRegistryId: registry.id });
             } else {
               console.log(chalk.dim(`\n  Warning: collection "${ref.name}" listed in registry "${registry.name}" could not be resolved`));
             }

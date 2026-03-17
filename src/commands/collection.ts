@@ -3,9 +3,6 @@ import ora from "ora";
 import fs from "fs";
 import { writeConfig, CONFIG_PATH, readConfig } from "../config.js";
 import type { Config, CollectionInfo, RegistryInfo } from "../types.js";
-import { ensureAuth } from "../auth.js";
-import { GDriveBackend } from "../backends/gdrive.js";
-import { GithubBackend } from "../backends/github.js";
 import { LocalBackend } from "../backends/local.js";
 import { resolveBackend } from "../backends/resolve.js";
 
@@ -15,74 +12,29 @@ export async function collectionCreateCommand(
 ): Promise<void> {
   const backendName = options.backend ?? "gdrive";
 
-  if (backendName === "github") {
-    await createGithubCollection(name, options.repo, options.skillsRepo);
-  } else {
-    await createGdriveCollection(name, options.skillsRepo);
-  }
-}
-
-async function createGithubCollection(name?: string, repo?: string, skillsRepo?: string): Promise<void> {
-  if (!repo) {
+  if (backendName === "github" && !options.repo) {
     console.log(chalk.red("GitHub backend requires --repo <owner/repo>"));
     console.log(chalk.dim("  Example: skillsmanager collection create my-skills --backend github --repo owner/my-repo"));
     return;
   }
 
-  const collectionName = name ?? "default";
-  const backend = new GithubBackend();
-
-  if (skillsRepo && skillsRepo !== repo) {
-    console.log(chalk.bold(`\nCreating GitHub collection "${collectionName}" in ${repo} (skills source: ${skillsRepo})...\n`));
-  } else {
-    console.log(chalk.bold(`\nCreating GitHub collection "${collectionName}" in ${repo}...\n`));
-  }
+  const collectionName = name ?? (backendName === "gdrive" ? "MY_SKILLS" : "default");
+  const spinner = ora(`Creating collection "${collectionName}" in ${backendName}...`).start();
 
   try {
-    const collection = await backend.createCollection(collectionName, repo, skillsRepo);
-    console.log(chalk.green(`\n  ✓ Collection "${collectionName}" created in github:${collection.folderId}`));
+    const backend = await resolveBackend(backendName);
+    const collection = await backend.createCollection({
+      name: collectionName,
+      repo: options.repo,
+      skillsRepo: options.skillsRepo,
+    });
+    spinner.succeed(`Collection "${collection.name}" created (${backendName}:${collection.folderId})`);
 
     const config = loadOrDefaultConfig();
-    upsertCollection(config, collection);
-
     const registry = await ensureRegistry(config);
     await registerCollectionInRegistry(registry, collection, config);
-
-    writeConfig(config);
-
-    console.log(`\nRun ${chalk.bold("skillsmanager add <path>")} to add skills to it.\n`);
-  } catch (err) {
-    console.log(chalk.red(`Failed: ${(err as Error).message}`));
-  }
-}
-
-async function createGdriveCollection(name?: string, skillsRepo?: string): Promise<void> {
-  const auth = await ensureAuth();
-  const backend = new GDriveBackend(auth);
-
-  const PREFIX = "SKILLS_";
-  const folderName = !name
-    ? `${PREFIX}MY_SKILLS`
-    : name.startsWith(PREFIX) ? name : `${PREFIX}${name}`;
-
-  const spinnerMsg = skillsRepo
-    ? `Creating collection "${folderName}" in Google Drive (skills source: ${skillsRepo})...`
-    : `Creating collection "${folderName}" in Google Drive...`;
-  const spinner = ora(spinnerMsg).start();
-
-  // Derive skill type from the skills-repo URL pattern (currently only github is supported)
-  const skillType = skillsRepo ? "github" : undefined;
-
-  try {
-    const collection = await backend.createCollection(folderName, skillType, skillsRepo);
-    spinner.succeed(`Collection "${folderName}" created in Google Drive`);
-
-    const config = loadOrDefaultConfig();
+    collection.sourceRegistryId = registry.id;
     upsertCollection(config, collection);
-
-    const registry = await ensureRegistry(config);
-    await registerCollectionInRegistry(registry, collection, config);
-
     writeConfig(config);
 
     console.log(`\nRun ${chalk.bold("skillsmanager add <path>")} to add skills to it.\n`);

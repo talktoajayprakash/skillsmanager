@@ -407,29 +407,26 @@ export class GithubBackend implements StorageBackend {
 
   // ── createCollection ─────────────────────────────────────────────────────────
 
-  async createCollection(
-    collectionName: string, repoRef?: string, skillsRepoRef?: string
-  ): Promise<CollectionInfo> {
-    if (!repoRef) throw new Error("GitHub backend requires --repo <owner/repo>");
-    const repo = repoRef;
+  async createCollection({ name, repo, skillsRepo }: import("./interface.js").CreateCollectionOptions): Promise<CollectionInfo> {
+    if (!repo) throw new Error("GitHub backend requires --repo <owner/repo>");
     await this.ensureRepo(repo);
     const workdir = this.ensureWorkdir(repo);
-    const metaDir = `${SKILLSMANAGER_DIR}/${collectionName}`;
+    const metaDir = `${SKILLSMANAGER_DIR}/${name}`;
     const filePath = path.join(workdir, metaDir, COLLECTION_FILENAME);
     fs.mkdirSync(path.dirname(filePath), { recursive: true });
 
     const owner = await this.getOwner();
-    const colData: CollectionFile = { name: collectionName, owner, skills: [] };
-    if (skillsRepoRef && skillsRepoRef !== repo) {
-      colData.metadata = { repo: skillsRepoRef };
+    const colData: CollectionFile = { name, owner, skills: [] };
+    if (skillsRepo && skillsRepo !== repo) {
+      colData.metadata = { repo: skillsRepo };
     }
     fs.writeFileSync(filePath, serializeCollection(colData));
     gitExec(["add", path.join(metaDir, COLLECTION_FILENAME)], workdir);
-    await this.commitAndPush(workdir, `chore: init collection ${collectionName}`);
+    await this.commitAndPush(workdir, `chore: init collection ${name}`);
 
     return {
       id: randomUUID(),
-      name: collectionName,
+      name,
       backend: "github",
       folderId: `${repo}:${metaDir}`,
     };

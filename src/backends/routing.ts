@@ -1,4 +1,4 @@
-import type { StorageBackend } from "./interface.js";
+import type { CreateCollectionOptions, StorageBackend } from "./interface.js";
 import type { CollectionFile, CollectionInfo, RegistryCollectionRef, RegistryFile, RegistryInfo } from "../types.js";
 import { GithubBackend } from "./github.js";
 
@@ -62,6 +62,10 @@ export class RoutingBackend implements StorageBackend {
 
   createRegistry(name?: string): Promise<RegistryInfo> {
     return this.inner.createRegistry(name);
+  }
+
+  createCollection(options: CreateCollectionOptions): Promise<CollectionInfo> {
+    return this.inner.createCollection(options);
   }
 
   // ── Routed: dispatch on col.type for skill-file operations ─────────────────

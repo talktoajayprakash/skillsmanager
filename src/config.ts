@@ -66,10 +66,18 @@ export function mergeCollections(
   fresh: Omit<CollectionInfo, "id">[],
   existing: CollectionInfo[]
 ): CollectionInfo[] {
-  return fresh.map((c) => {
+  const freshFolderIds = new Set(fresh.map((c) => c.folderId));
+
+  // Fresh collections, preserving UUIDs for already-known ones
+  const updated = fresh.map((c) => {
     const prev = existing.find((e) => e.folderId === c.folderId);
     return { ...c, id: prev?.id ?? randomUUID() };
   });
+
+  // Keep existing collections that weren't re-discovered (temporarily unavailable, etc.)
+  const kept = existing.filter((e) => !freshFolderIds.has(e.folderId));
+
+  return [...updated, ...kept];
 }
 
 /**

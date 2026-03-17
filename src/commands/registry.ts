@@ -335,15 +335,10 @@ export async function registryPushCommand(options: { backend?: string; repo?: st
       const collInfo = await local.resolveCollectionRef(ref);
       if (!collInfo) throw new Error(`Collection "${ref.name}" not found locally`);
 
-      let remoteCol: CollectionInfo;
-      if (targetBackend === "gdrive") {
-        const gdrive = remote as import("../backends/gdrive.js").GDriveBackend;
-        const folderName = `SKILLS_${ref.name.toUpperCase()}`;
-        remoteCol = await gdrive.createCollection(folderName);
-      } else {
-        const github = remote as import("../backends/github.js").GithubBackend;
-        remoteCol = await github.createCollection(ref.name, options.repo);
-      }
+      const remoteCol = await remote.createCollection({
+        name: ref.name,
+        repo: options.repo,
+      });
 
       const colData = await local.readCollection({ ...collInfo, id: "temp" });
       for (const skill of colData.skills) {
