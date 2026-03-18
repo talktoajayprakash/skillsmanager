@@ -1,5 +1,7 @@
 # Skills Manager — Agent Guide
 
+> **Keep `README.md` and `docs/index.md` in sync** — when updating one, mirror the changes to the other.
+
 Skills Manager is a CLI tool for storing and installing agent skills from local or remote storage (Google Drive). Implemented backends: `local`, `gdrive`, `github`.
 
 For a full understanding of the design, decisions, and architecture read **[docs/WRITEUP.md](./docs/WRITEUP.md)** and **[docs/registry-architecture.md](./docs/registry-architecture.md)**.
