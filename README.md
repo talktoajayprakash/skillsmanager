@@ -47,27 +47,36 @@ skillsmanager install
 
 This installs the bundled `skillsmanager` skill into all detected agents so your AI assistant can manage skills on your behalf.
 
-### 3. One-time Google Drive setup
+### 3. Connect a remote backend (optional)
 
-Skills Manager uses Google Drive as a remote registry. To connect it:
+Skills Manager supports Google Drive and GitHub as remote backends.
+
+**Google Drive:**
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com/) and create a project
 2. Enable the **Google Drive API** for that project
 3. Create **OAuth 2.0 credentials** (Desktop app type)
 4. Download `credentials.json` and save it to `~/.skillsmanager/credentials.json`
 
-Then authenticate and discover your registries:
-
 ```bash
 skillsmanager setup google   # walks you through OAuth
 skillsmanager refresh        # discovers collections in your Drive
+```
+
+**GitHub:**
+
+```bash
+skillsmanager setup github   # checks gh CLI and authenticates
+skillsmanager refresh        # discovers collections in your repos
 ```
 
 ## Commands
 
 | Command | Description |
 |---|---|
+| `skillsmanager status` | Show login status and identity for each backend |
 | `skillsmanager install` | Install the skillsmanager skill to all agents |
+| `skillsmanager uninstall` | Remove the skillsmanager skill from agent directories |
 | `skillsmanager list` | List all available skills |
 | `skillsmanager search <query>` | Search skills by name or description |
 | `skillsmanager fetch <name> --agent <agent>` | Download and install a skill for an agent |
@@ -75,10 +84,20 @@ skillsmanager refresh        # discovers collections in your Drive
 | `skillsmanager add --remote-path <path> --name <n> --description <d>` | Register a remote skill path (no upload) |
 | `skillsmanager update <path>` | Push local changes back to remote storage |
 | `skillsmanager refresh` | Re-discover collections from remote |
+| `skillsmanager skill delete <name>` | Delete a skill from a collection |
 | `skillsmanager collection create [name] --backend github --repo <owner/repo>` | Create a collection in a GitHub repo |
 | `skillsmanager collection create [name] --skills-repo <owner/repo>` | Create a collection with skills in a separate GitHub repo |
+| `skillsmanager registry create` | Create a new local registry |
+| `skillsmanager registry list` | Show all registries and their collections |
+| `skillsmanager registry discover` | Search a backend for registries owned by the current user |
+| `skillsmanager registry add-collection <name>` | Add a collection reference to the registry |
+| `skillsmanager registry remove-collection <name>` | Remove a collection reference from the registry |
 | `skillsmanager registry push --backend gdrive` | Push local registry to Google Drive |
 | `skillsmanager registry push --backend github --repo <owner/repo>` | Push local registry to GitHub |
+| `skillsmanager setup google` | One-time Google Drive setup |
+| `skillsmanager setup github` | One-time GitHub setup (checks gh CLI and authenticates) |
+| `skillsmanager logout google` | Clear Google OAuth session |
+| `skillsmanager logout github` | Log out of GitHub |
 
 ## Local Development
 
@@ -104,7 +123,7 @@ node dist/index.js <command>
 
 ## Registry format
 
-Skills are indexed by a `SKILLS_REGISTRY.yaml` file inside any Google Drive folder you own:
+Skills are indexed by a `SKILLS_REGISTRY.yaml` file inside any collection folder (local, Google Drive, or GitHub repo):
 
 ```yaml
 name: my-skills
@@ -126,7 +145,7 @@ description: Reviews code for bugs, style, and security issues
 ... skill instructions ...
 ```
 
-Skills Manager auto-discovers any `SKILLS_REGISTRY.yaml` in your Google account on `refresh`.
+Skills Manager auto-discovers any `SKILLS_REGISTRY.yaml` across all configured backends on `refresh`.
 
 ## Contributing
 
