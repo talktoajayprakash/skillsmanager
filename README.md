@@ -6,13 +6,11 @@
 
 # Skills Manager CLI
 
-**One place to manage, sync, and share all your AI agent skills — across every agent you use.**
+**A CLI for AI agents to organize, access, and share skills — from any device, with any agent.**
 
-You build skills for your AI agents, but keeping track of them is a mess. They're scattered across GitHub repos, local folders, and machines. Each agent has its own directory. Nothing is searchable. Nothing is shared.
+Skills Manager gives your AI agents a single, unified way to find and use every skill — whether it's one you've built yourself or one published in a git repository. Build your own registry, back it with Google Drive, GitHub, or local storage, and every skill becomes instantly searchable and installable across all your agents and devices.
 
-Skills Manager fixes this. It gives every skill a home — in Google Drive, GitHub, or any storage backend you choose — and makes them instantly available to any agent via a single CLI command. Your agents can search, install, and use any skill regardless of where it lives.
-
-Build skills confidently, store them where you want, and sync them across every device and agent you work with — Claude, Cursor, OpenAI Codex, OpenClaw, and beyond.
+No more scattered files. No more per-agent setup. One CLI to manage your skills, one index to search them, and one cache to keep them in sync — wherever you work.
 
 ## Why Skills Manager?
 
@@ -21,15 +19,13 @@ Build skills confidently, store them where you want, and sync them across every 
 - **Backend-agnostic** — store in Google Drive, GitHub, Dropbox, AWS S3, or local filesystem
 - **Sync across devices** — skills follow you, not your machine
 - **No duplication** — cached once locally, symlinked into each agent's directory
-- **Git-friendly** — plain Markdown files, easy to version-control and review
+
+![skillsmanager list — registry with collections and skills](docs/assets/registry-list.png)
 
 ## Supported Agents
 
 `claude` · `codex` · `cursor` · `windsurf` · `copilot` · `gemini` · `roo` · `openclaw` · `agents`
 
-> **OpenClaw users:** OpenClaw's skill system uses the same `SKILL.md` format and directory-based loading that Skills Manager is built around. Your OpenClaw skills are first-class citizens — store them in any backend, search them, and sync them across devices just like any other skill.
->
-> Any agent that reads from a skills directory works with Skills Manager. If your agent can read a file, it can use your skills.
 
 ## Quick Start
 
