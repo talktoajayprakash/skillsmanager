@@ -119,6 +119,47 @@ To run without installing globally:
 node dist/index.js <command>
 ```
 
+## How it works
+
+Skills Manager organizes skills in a three-layer hierarchy — **registry → collections → skills** — where each layer can live on a different storage backend:
+
+```mermaid
+graph TD
+    R["<b>Registry</b><br/>SKILLS_REGISTRY.yaml"] --> CA["<b>Collection A</b><br/><i>local</i>"]
+    R --> CB["<b>Collection B</b><br/><i>gdrive</i>"]
+    R --> CC["<b>Collection C</b><br/><i>github</i>"]
+
+    CA --> S1["code-review<br/>SKILL.md"]
+    CA --> S2["write-tests<br/>SKILL.md"]
+    CB --> S3["summarize-pr<br/>SKILL.md"]
+    CC --> S4["lint-fix<br/>SKILL.md"]
+
+    style R fill:#4a90d9,color:#fff,stroke:#357abd
+    style CA fill:#6ab04c,color:#fff,stroke:#4e8a38
+    style CB fill:#6ab04c,color:#fff,stroke:#4e8a38
+    style CC fill:#6ab04c,color:#fff,stroke:#4e8a38
+    style S1 fill:#f6e58d,stroke:#d4b702
+    style S2 fill:#f6e58d,stroke:#d4b702
+    style S3 fill:#f6e58d,stroke:#d4b702
+    style S4 fill:#f6e58d,stroke:#d4b702
+```
+
+When a skill is installed, it is downloaded once to a local cache and symlinked into each agent's skills directory — one copy on disk, many agents:
+
+```mermaid
+graph TD
+    B["<b>Storage Backend</b><br/>local / gdrive / github"] -->|download| C["<b>Local Cache</b><br/>~/.skillsmanager/cache/&lt;uuid&gt;/skill/"]
+    C -->|symlink| A1["~/.claude/skills/skill"]
+    C -->|symlink| A2["~/.cursor/skills/skill"]
+    C -->|symlink| A3["~/.gemini/skills/skill"]
+
+    style B fill:#4a90d9,color:#fff,stroke:#357abd
+    style C fill:#6ab04c,color:#fff,stroke:#4e8a38
+    style A1 fill:#f6e58d,stroke:#d4b702
+    style A2 fill:#f6e58d,stroke:#d4b702
+    style A3 fill:#f6e58d,stroke:#d4b702
+```
+
 ## Registry format
 
 Skills are indexed by a `SKILLS_REGISTRY.yaml` file inside any collection folder (local, Google Drive, or GitHub repo):
