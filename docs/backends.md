@@ -108,7 +108,7 @@ Google Drive       →    GitHub repo (owner/skills-repo)
     metadata.repo: ...
 ```
 
-- `skillsmanager fetch write-tests` → downloads from `owner/skills-repo` (via `gh`) regardless of where the collection YAML lives
+- `skillsmanager install write-tests --agent <agent>` → downloads from `owner/skills-repo` (via `gh`) regardless of where the collection YAML lives
 - `skillsmanager add ./local-skill --collection curated` → **error**: collection has a cross-backend source. Use `--remote-path` instead.
 - `skillsmanager add --remote-path skills/write-tests/ --name write-tests --description "..." --collection curated` → registers a path pointer in the YAML, no file upload
 

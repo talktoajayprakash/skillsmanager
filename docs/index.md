@@ -17,7 +17,7 @@ nav_order: 1
 
 You build skills for your AI agents, but keeping track of them is a mess. They're scattered across GitHub repos, local folders, and machines. Each agent has its own directory. Nothing is searchable. Nothing is shared.
 
-**Skills Manager fixes this.** It gives every skill a home — in Google Drive, GitHub, or any storage backend you choose — and makes them instantly available to any agent via a single CLI command. Your agents can search, fetch, and use any skill regardless of where it lives.
+**Skills Manager fixes this.** It gives every skill a home — in Google Drive, GitHub, or any storage backend you choose — and makes them instantly available to any agent via a single CLI command. Your agents can search, install, and use any skill regardless of where it lives.
 
 Build skills confidently, store them where you want, and sync them across every device and agent you work with.
 

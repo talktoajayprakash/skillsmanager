@@ -1,8 +1,8 @@
 # Skills Manager — Agent Guide
 
-Skills Manager is a CLI tool for storing and fetching agent skills from local or remote storage (Google Drive). Implemented backends: `local`, `gdrive`, `github`.
+Skills Manager is a CLI tool for storing and installing agent skills from local or remote storage (Google Drive). Implemented backends: `local`, `gdrive`, `github`.
 
-For a full understanding of the design, decisions, and architecture read **[WRITEUP.md](./WRITEUP.md)** and **[docs/registry-architecture.md](./docs/registry-architecture.md)**.
+For a full understanding of the design, decisions, and architecture read **[docs/WRITEUP.md](./docs/WRITEUP.md)** and **[docs/registry-architecture.md](./docs/registry-architecture.md)**.
 
 ## Package
 
@@ -13,18 +13,28 @@ For a full understanding of the design, decisions, and architecture read **[WRIT
 ## Quick reference
 
 ```bash
-skillsmanager install                       # install skillsmanager skill to all agents
-skillsmanager search <query>                # search by name or description (BM25)
-skillsmanager fetch <name> --agent <agent>  # download skill and symlink to agent
-skillsmanager add <path>                    # upload a local skill to a collection
-skillsmanager update <path>                 # push local changes back to storage
-skillsmanager list                          # list all available skills
-skillsmanager refresh                       # re-discover collections
-skillsmanager collection create             # create a new collection
-skillsmanager registry create               # create a local registry
-skillsmanager registry list                 # show registries and collections
-skillsmanager registry push --backend gdrive  # push local data to Google Drive
-skillsmanager setup google                  # one-time Google Drive setup (human-facing)
+skillsmanager install                            # install skillsmanager skill to all agents
+skillsmanager uninstall                          # remove skillsmanager skill from agent directories
+skillsmanager install <name> --agent <agent>     # install a named skill
+skillsmanager uninstall <name> --agent <agent>   # remove skill symlink (cache untouched)
+skillsmanager search <query>                     # search by name or description (BM25)
+skillsmanager add <path>                         # upload a local skill to a collection
+skillsmanager update <path>                      # push local changes back to storage
+skillsmanager list                               # list all available skills
+skillsmanager refresh                            # re-discover collections
+skillsmanager status                             # show login status and identity for each backend
+skillsmanager skill delete <name>                # delete a skill from a collection
+skillsmanager collection create                  # create a new collection (--backend gdrive|github)
+skillsmanager registry create                    # create a registry (--backend local|gdrive|github)
+skillsmanager registry list                      # show registries and collections
+skillsmanager registry discover                  # search a backend for registries owned by current user
+skillsmanager registry add-collection <name>     # add a collection reference to the registry
+skillsmanager registry remove-collection <name>  # remove a collection reference from the registry
+skillsmanager registry push --backend gdrive     # push local data to Google Drive
+skillsmanager setup google                       # one-time Google Drive setup (human-facing)
+skillsmanager setup github                       # one-time GitHub setup (checks gh CLI, runs gh auth login)
+skillsmanager logout google                      # clear Google OAuth session
+skillsmanager logout github                      # log out of GitHub
 ```
 
 ## Key files
@@ -53,17 +63,26 @@ src/
 ├── backends/
 │   ├── interface.ts      # StorageBackend interface
 │   ├── local.ts          # Local filesystem backend (default, no auth)
-│   └── gdrive.ts         # Google Drive implementation
+│   ├── gdrive.ts         # Google Drive implementation
+│   ├── github.ts         # GitHub implementation
+│   ├── routing.ts        # Route operations to the correct backend
+│   └── resolve.ts        # Resolve backend from registry/collection config
+├── utils/
+│   └── git.ts            # Git helpers
 └── commands/
     ├── init.ts
     ├── list.ts
     ├── search.ts
-    ├── fetch.ts
     ├── add.ts
     ├── update.ts
     ├── refresh.ts
+    ├── status.ts          # login status per backend
+    ├── skill.ts           # skill delete
     ├── collection.ts
-    ├── registry.ts       # registry create/list/discover/add-collection/push
-    ├── install.ts        # install/uninstall bundled skill
-    └── setup/google.ts
+    ├── registry.ts        # registry create/list/discover/add-collection/remove-collection/push
+    ├── install.ts         # install/uninstall bundled skill
+    ├── logout.ts          # logout google/github
+    └── setup/
+        ├── google.ts
+        └── github.ts
 ```

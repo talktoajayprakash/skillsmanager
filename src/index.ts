@@ -8,7 +8,6 @@ import { AGENT_PATHS } from "./types.js";
 import { initCommand } from "./commands/init.js";
 import { listCommand } from "./commands/list.js";
 import { searchCommand } from "./commands/search.js";
-import { fetchCommand } from "./commands/fetch.js";
 import { addCommand } from "./commands/add.js";
 import { updateCommand } from "./commands/update.js";
 import { refreshCommand } from "./commands/refresh.js";
@@ -95,15 +94,6 @@ program
   .command("search <query>")
   .description("Search skills by name or description (BM25 ranked)")
   .action(searchCommand);
-
-program
-  .command("fetch <names...>")
-  .description("Download and install a skill via symlink")
-  .requiredOption("--agent <agent>", `Agent to install for (${supportedAgents})`)
-  .option("--scope <scope>", "global (~/.agent/skills/) or project (./.agent/skills/)", "global")
-  .action((names: string[], options: { agent: string; scope: "global" | "project" }) =>
-    fetchCommand(names, options)
-  );
 
 program
   .command("add [path]")
@@ -209,21 +199,23 @@ registry
 // ── Install/Uninstall ────────────────────────────────────────────────────────
 
 program
-  .command("install")
-  .description("Install the skillsmanager skill to agent directories")
-  .option("--agent <agents>", "Comma-separated agents (default: all)")
+  .command("install [name]")
+  .description("Install skillsmanager skill to agent dirs, or install a named skill")
+  .option("--agent <agent>", `Agent to install for (${supportedAgents})`)
+  .option("--scope <scope>", "global (~/.agent/skills/) or project (./.agent/skills/)", "global")
   .option("--path <dir>", "Custom directory to install to")
-  .action((options: { agent?: string; path?: string }) =>
-    installCommand(options)
+  .action((name: string | undefined, options: { agent?: string; path?: string; scope?: string }) =>
+    installCommand(name, options)
   );
 
 program
-  .command("uninstall")
-  .description("Remove the skillsmanager skill from agent directories")
-  .option("--agent <agents>", "Comma-separated agents (default: all)")
+  .command("uninstall [name]")
+  .description("Remove skillsmanager skill from agent dirs, or remove a named skill's symlink")
+  .option("--agent <agent>", `Agent to uninstall from (${supportedAgents})`)
+  .option("--scope <scope>", "global or project", "global")
   .option("--path <dir>", "Custom directory to remove from")
-  .action((options: { agent?: string; path?: string }) =>
-    uninstallCommand(options)
+  .action((name: string | undefined, options: { agent?: string; path?: string; scope?: string }) =>
+    uninstallCommand(name, options)
   );
 
 program.parseAsync(process.argv).catch((err: Error) => {

@@ -215,7 +215,7 @@ describe("add command", () => {
   });
 });
 
-describe("fetch command", () => {
+describe("install command (named skill)", () => {
   beforeEach(() => {
     // Pre-populate the fake store so downloadSkill has something to copy
     const storeSkillDir = path.join(mockBackend._storeDir, "write_linkedin_post");
@@ -232,8 +232,8 @@ describe("fetch command", () => {
   });
 
   it("downloads skill files to the cache", async () => {
-    const { fetchCommand } = await import("../commands/fetch.js");
-    await fetchCommand(["write_linkedin_post"], { agent: "claude", scope: "global" });
+    const { installCommand } = await import("../commands/install.js");
+    await installCommand("write_linkedin_post", { agent: "claude", scope: "global" });
 
     const expectedCache = path.join(tmpCacheDir, fakeCollection.id, "write_linkedin_post");
     expect(fs.existsSync(expectedCache)).toBe(true);
@@ -241,8 +241,8 @@ describe("fetch command", () => {
   });
 
   it("creates a symlink in the agent skills directory", async () => {
-    const { fetchCommand } = await import("../commands/fetch.js");
-    await fetchCommand(["write_linkedin_post"], { agent: "claude", scope: "global" });
+    const { installCommand } = await import("../commands/install.js");
+    await installCommand("write_linkedin_post", { agent: "claude", scope: "global" });
 
     const linkPath = path.join(tmpAgentDir, "write_linkedin_post");
     expect(fs.existsSync(linkPath)).toBe(true);
@@ -254,8 +254,8 @@ describe("fetch command", () => {
   });
 
   it("records the installed path in the skills index", async () => {
-    const { fetchCommand } = await import("../commands/fetch.js");
-    await fetchCommand(["write_linkedin_post"], { agent: "claude", scope: "global" });
+    const { installCommand } = await import("../commands/install.js");
+    await installCommand("write_linkedin_post", { agent: "claude", scope: "global" });
 
     const cfg = JSON.parse(fs.readFileSync(path.join(tmpConfigDir, "config.json"), "utf-8"));
     const entry = cfg.skills["write_linkedin_post"]?.[0];
@@ -264,10 +264,10 @@ describe("fetch command", () => {
   });
 
   it("fails gracefully for an unknown skill name", async () => {
-    const { fetchCommand } = await import("../commands/fetch.js");
+    const { installCommand } = await import("../commands/install.js");
     const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 
-    await fetchCommand(["nonexistent_skill"], { agent: "claude", scope: "global" });
+    await installCommand("nonexistent_skill", { agent: "claude", scope: "global" });
 
     expect(mockBackend.downloadSkill).not.toHaveBeenCalled();
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("not found"));

@@ -62,9 +62,10 @@ export function createSymlink(
 
   const linkPath = path.join(skillsDir, skillName);
 
-  if (fs.existsSync(linkPath)) {
-    const stat = fs.lstatSync(linkPath);
-    if (stat.isSymbolicLink()) {
+  let existingStat: fs.Stats | undefined;
+  try { existingStat = fs.lstatSync(linkPath); } catch { /* doesn't exist */ }
+  if (existingStat) {
+    if (existingStat.isSymbolicLink()) {
       fs.unlinkSync(linkPath);
     } else {
       throw new Error(

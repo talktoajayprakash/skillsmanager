@@ -21,17 +21,17 @@ skillsmanager install --agent claude    # install to a specific agent
 skillsmanager install --agent claude,cursor,openclaw  # install to multiple agents
 ```
 
-### `skillsmanager fetch`
+### `skillsmanager install <name>`
 
 Downloads a skill from remote storage and symlinks it into an agent's skills directory.
 
 ```bash
-skillsmanager fetch <skill-name> --agent <agent>
+skillsmanager install <skill-name> --agent <agent>
 ```
 
 ```bash
-skillsmanager fetch code-review --agent claude
-skillsmanager fetch write-tests --agent cursor
+skillsmanager install code-review --agent claude
+skillsmanager install write-tests --agent cursor
 ```
 
 The skill is cached at `~/.skillsmanager/cache/<uuid>/<skill-name>/` and symlinked — one copy, many agents.
@@ -124,7 +124,7 @@ skillsmanager add --remote-path skills/write-tests/ --name write-tests \
   --collection my-curated-col
 ```
 
-This writes an entry into `SKILLS_COLLECTION.yaml` without touching any skill files. When a user fetches the skill, the files are pulled from the declared `metadata.repo`.
+This writes an entry into `SKILLS_COLLECTION.yaml` without touching any skill files. When a user installs the skill, the files are pulled from the declared `metadata.repo`.
 
 ### `skillsmanager update`
 

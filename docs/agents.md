@@ -28,12 +28,12 @@ Skills Manager installs skills by symlinking from its local cache into each agen
 ## Installing a skill to an agent
 
 ```bash
-skillsmanager fetch <skill-name> --agent <agent>
+skillsmanager install <skill-name> --agent <agent>
 
 # examples
-skillsmanager fetch code-review --agent claude
-skillsmanager fetch code-review --agent openclaw
-skillsmanager fetch code-review --agent cursor,windsurf   # multiple agents
+skillsmanager install code-review --agent claude
+skillsmanager install code-review --agent openclaw
+skillsmanager install code-review --agent cursor,windsurf   # multiple agents
 ```
 
 ## Installing to all agents

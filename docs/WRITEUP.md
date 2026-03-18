@@ -8,7 +8,7 @@ Agent Skills (per the open standard at agentskills.io) are filesystem-based capa
 
 This is powerful, but it creates a real pain point: **skills are trapped on the machine where you created them.** If you work across multiple machines, want to share skills with a team, or just want a backup, you have no native sync mechanism.
 
-**Skills Manager** solves this by giving you a CLI to store skills in remote storage (Google Drive today, more backends later) and selectively fetch them into any agent's skills directory.
+**Skills Manager** solves this by giving you a CLI to store skills in remote storage (Google Drive today, more backends later) and selectively install them into any agent's skills directory.
 
 ---
 
@@ -103,8 +103,8 @@ skillsmanager refresh
 skillsmanager list
 skillsmanager search <query>
 
-# Fetch a skill into an agent's skills directory
-skillsmanager fetch <name> --agent <agent>
+# Install a skill into an agent's skills directory
+skillsmanager install <name> --agent <agent>
 
 # Add a local skill to a collection
 skillsmanager add <path>
@@ -173,7 +173,7 @@ Skills are cached locally at:
 
 The UUID is a stable identifier assigned per collection in `config.json`. It is backend-agnostic — it does not encode the backend type or folder ID. This keeps cache paths stable even if a collection is renamed or migrated to a different backend.
 
-When `skillsmanager fetch write-linkedin-post --agent claude` is run:
+When `skillsmanager install write-linkedin-post --agent claude` is run:
 1. Looks up which collection owns the skill
 2. Downloads to `~/.skillsmanager/cache/<uuid>/write-linkedin-post/`
 3. Creates symlink: `~/.claude/skills/write-linkedin-post → ~/.skillsmanager/cache/<uuid>/write-linkedin-post/`
@@ -262,7 +262,7 @@ metadata:
   repo: owner/skills-repo   # type-specific config
 ```
 
-When `type` is absent, skill files come from the same backend as the collection YAML. When `type: github` is set, `skillsmanager fetch` clones skill files from `metadata.repo` regardless of where the collection YAML is stored.
+When `type` is absent, skill files come from the same backend as the collection YAML. When `type: github` is set, `skillsmanager install` downloads skill files from `metadata.repo` regardless of where the collection YAML is stored.
 
 ### RoutingBackend — the decorator pattern
 

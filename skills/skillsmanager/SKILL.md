@@ -1,6 +1,6 @@
 ---
 name: skillsmanager
-description: Discover, fetch, add, and update agent skills from local or remote storage using the skillsmanager CLI
+description: Discover, install, add, and update agent skills from local or remote storage using the skillsmanager CLI
 ---
 
 # Skills Manager
@@ -23,10 +23,14 @@ Skills Manager is a CLI tool for managing agent skills stored locally or in remo
 skillsmanager search <query>
 
 # Download and install for this agent
-skillsmanager fetch <name> --agent <agent>
+skillsmanager install <name> --agent <agent>
 
 # Install to current project only (instead of global)
-skillsmanager fetch <name> --agent <agent> --scope project
+skillsmanager install <name> --agent <agent> --scope project
+
+# Remove a skill's symlink (cache and storage untouched)
+skillsmanager uninstall <name> --agent <agent>
+skillsmanager uninstall <name> --agent <agent> --scope project
 
 # List all available skills across all collections
 skillsmanager list
@@ -145,6 +149,9 @@ skillsmanager install --path <dir>
 
 # Remove from all agents
 skillsmanager uninstall
+
+# Remove from a specific agent
+skillsmanager uninstall --agent claude
 ```
 
 ## Cross-backend collections (curated skill libraries)
@@ -154,7 +161,7 @@ A collection can declare that its skill files live in a different GitHub repo th
 **When you encounter a cross-backend collection:**
 - `skillsmanager add <local-path> --collection <name>` → **will fail** with an error like `skills source type is "github"`. This is expected — you cannot upload local files to a foreign repo.
 - **Do this instead:** `skillsmanager add --remote-path <path-in-repo> --name <n> --description "<d>" --collection <name>`
-- `skillsmanager fetch <skill> --agent claude` → **works normally** — files are automatically pulled from the declared GitHub repo
+- `skillsmanager install <skill> --agent claude` → **works normally** — files are automatically pulled from the declared GitHub repo
 
 **How to identify a cross-backend collection:**
 - `skillsmanager registry list` — collections with a `--skills-repo` are shown with their skills repo
@@ -170,21 +177,21 @@ A collection can declare that its skill files live in a different GitHub repo th
 
 **User asks to find a skill:**
 1. `skillsmanager search <relevant terms>`
-2. `skillsmanager fetch <skill-name> --agent claude`
+2. `skillsmanager install <skill-name> --agent claude`
 
 **User asks to share a skill they created locally:**
 1. Ensure the skill directory has a `SKILL.md` with `name` and `description` in YAML frontmatter
 2. `skillsmanager add <path-to-skill-directory>`
-3. Fetch the skill to make it immediately available to the agent:
-   - For all projects: `skillsmanager fetch <skill-name> --agent claude`
-   - For current project only: `skillsmanager fetch <skill-name> --agent claude --scope project`
+3. Install the skill to make it immediately available to the agent:
+   - For all projects: `skillsmanager install <skill-name> --agent claude`
+   - For current project only: `skillsmanager install <skill-name> --agent claude --scope project`
 
 **User asks to update a skill:**
 1. Edit the skill files locally
 2. `skillsmanager update <path-to-skill-directory>`
 
 **User asks to install a skill for this project only:**
-1. `skillsmanager fetch <name> --agent claude --scope project`
+1. `skillsmanager install <name> --agent claude --scope project`
 
 **User wants to back up local skills to Google Drive:**
 1. `skillsmanager setup google` (one-time, human-only)
@@ -196,7 +203,7 @@ A collection can declare that its skill files live in a different GitHub repo th
 
 **User wants to create a curated collection of skills from a public GitHub repo (cross-backend):**
 
-Use this when you want to expose skills from an external GitHub repo (e.g. `anthropics/skills`) via a collection the user can fetch from, without copying the files.
+Use this when you want to expose skills from an external GitHub repo (e.g. `anthropics/skills`) via a collection the user can install from, without copying the files.
 
 1. `skillsmanager collection create <name> --backend gdrive --skills-repo <owner/skills-repo>`
    - This creates the collection YAML in the user's Google Drive with `type: github` + `metadata.repo` pointing to the skills repo
@@ -204,7 +211,7 @@ Use this when you want to expose skills from an external GitHub repo (e.g. `anth
    ```bash
    skillsmanager add --remote-path skills/write-tests/ --name write-tests --description "Generate unit tests" --collection <name>
    ```
-3. Users fetch skills normally — `skillsmanager fetch write-tests --agent claude` — and the files are pulled from the skills repo
+3. Users install skills normally — `skillsmanager install write-tests --agent claude` — and the files are pulled from the skills repo
 
 **User wants to add a skill from a public GitHub repo without uploading files:**
 1. Create or identify a collection with `--skills-repo <owner/repo>`
@@ -228,7 +235,7 @@ Use this when you want to expose skills from an external GitHub repo (e.g. `anth
 
 Most collections store skill files directly in their backend. But a collection can also declare that skill files live in a different GitHub repo — this is useful for curating public skills or pointing to a shared library repo.
 
-| Collection backend | Skills repo | What `add` does | What `fetch` does |
+| Collection backend | Skills repo | What `add` does | What `install` does |
 |---|---|---|---|
 | `gdrive` or `local` | (none) | Uploads files to Drive/local | Downloads from Drive/local |
 | `github` | (same repo as collection) | Commits files to the repo | Clones/pulls from repo |
@@ -236,6 +243,8 @@ Most collections store skill files directly in their backend. But a collection c
 | `github` (registry repo) | `--skills-repo owner/skills-repo` | **Requires `--remote-path`** — registers a path pointer only | Downloads files from the skills repo |
 
 When you try to `skillsmanager add <local-path>` to a collection with a cross-backend skills repo, the command will fail with a clear error pointing you to `--remote-path`.
+
+The `install` column above refers to `skillsmanager install <name> --agent <agent>`.
 
 ## Architecture
 

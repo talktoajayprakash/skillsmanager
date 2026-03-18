@@ -96,7 +96,7 @@ skills:
 | `type` | `github` | Skill files are fetched from a GitHub repo |
 | `metadata.repo` | `owner/repo` | The GitHub repo containing the skill files |
 
-When `type` is set, `skillsmanager fetch` downloads skill files from `metadata.repo` regardless of where the collection YAML lives (Drive, GitHub, local). When `type` is absent, skills are fetched from the same backend as the collection.
+When `type` is set, `skillsmanager install` downloads skill files from `metadata.repo` regardless of where the collection YAML lives (Drive, GitHub, local). When `type` is absent, skills are downloaded from the same backend as the collection.
 
 {: .note }
 The legacy filename `SKILLS_SYNC.yaml` is still recognized for backwards compatibility.
@@ -219,7 +219,7 @@ Note: `discoverRegistries` returns without `id` — UUID assignment is handled b
 
 ## Local cache and symlinks
 
-When a skill is fetched:
+When a skill is installed:
 
 1. The skill files are downloaded to `~/.skillsmanager/cache/<collection-uuid>/<skill-name>/`
 2. A symlink is created in the agent's skills directory pointing to the cache:

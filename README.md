@@ -10,7 +10,7 @@
 
 You build skills for your AI agents, but keeping track of them is a mess. They're scattered across GitHub repos, local folders, and machines. Each agent has its own directory. Nothing is searchable. Nothing is shared.
 
-Skills Manager fixes this. It gives every skill a home — in Google Drive, GitHub, or any storage backend you choose — and makes them instantly available to any agent via a single CLI command. Your agents can search, fetch, and use any skill regardless of where it lives.
+Skills Manager fixes this. It gives every skill a home — in Google Drive, GitHub, or any storage backend you choose — and makes them instantly available to any agent via a single CLI command. Your agents can search, install, and use any skill regardless of where it lives.
 
 Build skills confidently, store them where you want, and sync them across every device and agent you work with — Claude, Cursor, OpenAI Codex, OpenClaw, and beyond.
 
@@ -79,7 +79,8 @@ skillsmanager refresh        # discovers collections in your repos
 | `skillsmanager uninstall` | Remove the skillsmanager skill from agent directories |
 | `skillsmanager list` | List all available skills |
 | `skillsmanager search <query>` | Search skills by name or description |
-| `skillsmanager fetch <name> --agent <agent>` | Download and install a skill for an agent |
+| `skillsmanager install <name> --agent <agent>` | Download and install a skill for an agent |
+| `skillsmanager uninstall <name> --agent <agent>` | Remove a skill's symlink (cache untouched) |
 | `skillsmanager add <path>` | Upload a local skill to a collection |
 | `skillsmanager add --remote-path <path> --name <n> --description <d>` | Register a remote skill path (no upload) |
 | `skillsmanager update <path>` | Push local changes back to remote storage |

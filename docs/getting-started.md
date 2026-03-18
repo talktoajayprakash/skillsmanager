@@ -68,7 +68,7 @@ skillsmanager refresh
 ```bash
 skillsmanager list                                 # see all available skills
 skillsmanager search "code review"                 # search by name or description
-skillsmanager fetch code-review --agent claude     # download and install
+skillsmanager install code-review --agent claude   # download and install
 ```
 
 ### Add a skill you've built
