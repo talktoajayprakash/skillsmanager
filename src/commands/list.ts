@@ -4,7 +4,7 @@ import chalk from "chalk";
 import ora from "ora";
 import { readConfig } from "../config.js";
 import { resolveBackend } from "../backends/resolve.js";
-import type { CollectionInfo, RegistryInfo, SkillEntry, SkillIndex, ResolvedSkill } from "../types.js";
+import type { CollectionFile, CollectionInfo, RegistryInfo, SkillEntry, SkillIndex, ResolvedSkill } from "../types.js";
 
 export async function getAllSkills(): Promise<ResolvedSkill[]> {
   const config = readConfig();
@@ -21,11 +21,13 @@ export async function getAllSkills(): Promise<ResolvedSkill[]> {
   return allSkills;
 }
 
-function collectionTag(col: CollectionInfo): string {
+function collectionTag(col: CollectionInfo, colFile?: CollectionFile): string {
   if (col.backend === "github") {
     const repo = col.folderId.split(":")[0];
-    return `[github: ${repo}]`;
+    return `[github: https://github.com/${repo}]`;
   }
+  const repo = colFile?.type === "github" ? (colFile.metadata?.repo as string | undefined) : undefined;
+  if (repo) return `[${col.backend}] → github: https://github.com/${repo}`;
   return `[${col.backend}]`;
 }
 
@@ -50,6 +52,7 @@ function installedPaths(skillName: string, collectionId: string, skillIndex: Ski
 function renderCollections(
   cols: CollectionInfo[],
   collectionSkills: Map<string, SkillEntry[]>,
+  collectionFiles: Map<string, CollectionFile>,
   skillIndex: SkillIndex
 ): void {
   for (let ci = 0; ci < cols.length; ci++) {
@@ -59,7 +62,7 @@ function renderCollections(
     const childPad = isLastCol ? "    " : "│   ";
 
     console.log(
-      `${colBranch} ${chalk.bold.yellow(col.name)} ${chalk.dim(collectionTag(col))}`
+      `${colBranch} ${chalk.bold.yellow(col.name)} ${chalk.dim(collectionTag(col, collectionFiles.get(col.id)))}`
     );
 
     const skills = (collectionSkills.get(col.id) ?? []).sort((a, b) =>
@@ -90,10 +93,12 @@ export async function listCommand(): Promise<void> {
 
     // Fetch skills per collection
     const collectionSkills = new Map<string, SkillEntry[]>();
+    const collectionFiles = new Map<string, CollectionFile>();
     for (const col of config.collections) {
       const backend = await resolveBackend(col.backend);
       const colFile = await backend.readCollection(col);
       collectionSkills.set(col.id, colFile.skills);
+      collectionFiles.set(col.id, colFile);
     }
 
     spinner.stop();
@@ -131,7 +136,7 @@ export async function listCommand(): Promise<void> {
       console.log(
         `${chalk.bold.white(reg.name)}  ${chalk.dim(`${reg.backend}`)}`
       );
-      renderCollections(cols, collectionSkills, config.skills);
+      renderCollections(cols, collectionSkills, collectionFiles, config.skills);
       console.log();
     }
 
@@ -141,7 +146,7 @@ export async function listCommand(): Promise<void> {
       console.log(
         `${chalk.bold.white("(unregistered)")}  ${chalk.dim("run 'skillsmanager refresh' to link to a registry")}`
       );
-      renderCollections(orphans, collectionSkills, config.skills);
+      renderCollections(orphans, collectionSkills, collectionFiles, config.skills);
       console.log();
     }
   } catch (err) {
