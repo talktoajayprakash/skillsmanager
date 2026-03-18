@@ -8,7 +8,7 @@
 
 **A CLI for AI agents to organize, access, and share skills — from any device, with any agent.**
 
-Skills Manager gives your AI agents a single, unified way to find and use every skill — whether it's one you've built yourself or one published in a git repository. Build your own registry, back it with Google Drive, GitHub, or local storage, and every skill becomes instantly searchable and installable across all your agents and devices.
+Skills Manager gives your AI agents a single, unified way to find and use every skill — whether it's one you've built yourself or one published in a git repository. Build your own registry, back it with Google Drive, GitHub, or local storage, and every skill becomes instantly searchable and installable across all your agents and devices. When you improve a skill, a single command pushes your changes back to the backend — no manual syncing, no copy-pasting between machines.
 
 No more scattered files. No more per-agent setup. One CLI to manage your skills, one index to search them, and one cache to keep them in sync — wherever you work.
 
@@ -19,6 +19,7 @@ No more scattered files. No more per-agent setup. One CLI to manage your skills,
 - **Backend-agnostic** — store in Google Drive, GitHub, Dropbox, AWS S3, or local filesystem
 - **Sync across devices** — skills follow you, not your machine
 - **No duplication** — cached once locally, symlinked into each agent's directory
+- **Seamless updates** — edit a skill locally and push changes back to your backend with a single command
 
 ![skillsmanager list — registry with collections and skills](docs/assets/registry-list.png)
 
