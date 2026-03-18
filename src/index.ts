@@ -27,6 +27,7 @@ const supportedAgents = Object.keys(AGENT_PATHS).join(", ");
 
 // Read the bundled SKILL.md as the CLI help — single source of truth
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const pkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, "..", "package.json"), "utf-8"));
 const skillMdPath = path.resolve(__dirname, "..", "skills", "skillsmanager", "SKILL.md");
 let helpText = "Discover, fetch, and manage agent skills from local or remote storage.";
 try {
@@ -38,7 +39,7 @@ try {
 program
   .name("skillsmanager")
   .description(helpText)
-  .version("0.0.1");
+  .version(pkg.version);
 
 // ── Setup ────────────────────────────────────────────────────────────────────
 
