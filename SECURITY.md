@@ -32,7 +32,7 @@ Please include:
 Skills Manager is a CLI tool with no server component. The main security-relevant areas are:
 
 - **OAuth token storage** — tokens are stored at `~/.skillsmanager/token.json` with file-system permissions
-- **Google Drive API access** — scoped to files created by the app (`drive.file` scope)
+- **Google Drive API access** — scoped to files created or opened by the app (`drive.file` scope), meaning Skills Manager cannot access files in your Drive that it didn't create
 - **Skill content execution** — Skills Manager does not execute skill files; it only reads and symlinks them. Execution is handled by the target agent.
 
 Out of scope: social engineering, phishing, issues in third-party dependencies that have already been publicly disclosed.

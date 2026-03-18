@@ -5,7 +5,7 @@ import type { OAuth2Client } from "google-auth-library";
 import { TOKEN_PATH, ensureConfigDir, readCredentials, credentialsExist } from "./config.js";
 
 const SCOPES = [
-  "https://www.googleapis.com/auth/drive",
+  "https://www.googleapis.com/auth/drive.file",
   "openid",
   "https://www.googleapis.com/auth/userinfo.email",
 ];
