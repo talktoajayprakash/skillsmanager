@@ -13,7 +13,7 @@ export async function collectionCreateCommand(
 
   if (backendName === "github" && !options.repo) {
     console.log(chalk.red("GitHub backend requires --repo <owner/repo>"));
-    console.log(chalk.dim("  Example: skillsmanager collection create my-skills --backend github --repo owner/my-repo"));
+    console.log(chalk.dim("  Example: sm collection create my-skills --backend github --repo owner/my-repo"));
     return;
   }
 
@@ -36,7 +36,7 @@ export async function collectionCreateCommand(
     upsertCollection(config, collection);
     writeConfig(config);
 
-    console.log(`\nRun ${chalk.bold("skillsmanager add <path>")} to add skills to it.\n`);
+    console.log(`\nRun ${chalk.bold("sm add <path>")} to add skills to it.\n`);
   } catch (err) {
     spinner.fail(`Failed: ${(err as Error).message}`);
   }

@@ -93,14 +93,14 @@ export class GithubBackend implements StorageBackend {
   async getOwner(): Promise<string> {
     const r = ghExec(["api", "user", "--jq", ".login"]);
     if (!r.ok || !r.stdout) {
-      throw new Error("GitHub auth failed. Run: skillsmanager setup github");
+      throw new Error("GitHub auth failed. Run: sm setup github");
     }
     return r.stdout;
   }
 
   async getStatus(): Promise<BackendStatus> {
     if (!ghInstalled()) return { loggedIn: false, identity: "", hint: "install gh CLI first" };
-    if (!ghAuthed()) return { loggedIn: false, identity: "", hint: "run: skillsmanager setup github" };
+    if (!ghAuthed()) return { loggedIn: false, identity: "", hint: "run: sm setup github" };
     return { loggedIn: true, identity: ghGetLogin() };
   }
 
@@ -140,7 +140,7 @@ export class GithubBackend implements StorageBackend {
     // Direct push blocked — create a PR
     console.log(chalk.yellow("\n  Direct push blocked (branch protection). Creating a PR..."));
 
-    const branch = `skillsmanager-update-${Date.now()}`;
+    const branch = `sm-update-${Date.now()}`;
     const checkout = gitExec(["checkout", "-b", branch], workdir);
     if (!checkout.ok) throw new Error(`Failed to create branch: ${checkout.stderr}`);
 
@@ -148,7 +148,7 @@ export class GithubBackend implements StorageBackend {
     if (!pushBranch.ok) throw new Error(`Failed to push branch: ${pushBranch.stderr}`);
 
     const prResult = ghExec(
-      ["pr", "create", "--title", title, "--body", "Created by skillsmanager", "--fill"],
+      ["pr", "create", "--title", title, "--body", "Created by sm", "--fill"],
       { cwd: workdir }
     );
     if (!prResult.ok) throw new Error(`Failed to create PR: ${prResult.stderr}`);
@@ -173,7 +173,7 @@ export class GithubBackend implements StorageBackend {
 
     if (!merged) {
       console.log(chalk.yellow(`\n  PR not merged within timeout. Branch "${branch}" is still open.`));
-      console.log(chalk.dim("  Merge it manually, then run: skillsmanager refresh"));
+      console.log(chalk.dim("  Merge it manually, then run: sm refresh"));
       return;
     }
 

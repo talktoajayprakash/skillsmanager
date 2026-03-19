@@ -64,14 +64,14 @@ export async function addCommand(
         return;
       }
       // No matching GitHub collection — fall through to standard flow
-      // (user can run `skillsmanager collection create --backend github --repo <repo>` first)
+      // (user can run `sm collection create --backend github --repo <repo>` first)
     }
   }
 
   // ── Standard flow ─────────────────────────────────────────────────────────────
   let config;
   try { config = readConfig(); } catch {
-    console.log(chalk.red("No config found. Run: skillsmanager collection create"));
+    console.log(chalk.red("No config found. Run: sm collection create"));
     return;
   }
 
@@ -87,7 +87,7 @@ export async function addCommand(
   }
 
   if (!collection) {
-    console.log(chalk.red("No collections configured. Run: skillsmanager collection create"));
+    console.log(chalk.red("No collections configured. Run: sm collection create"));
     return;
   }
 
@@ -106,7 +106,7 @@ export async function addCommand(
           `This collection's skills source is "${foreignRepo}" (type: ${skillType}). ` +
           `The provided path does not belong to that repo.\n` +
           chalk.dim(`  To register a skill by path without a local clone, use:\n`) +
-          chalk.dim(`  skillsmanager add --collection ${collection.name} --remote-path <rel/path> --name <name> --description <desc>`)
+          chalk.dim(`  sm add --collection ${collection.name} --remote-path <rel/path> --name <name> --description <desc>`)
         ));
         return;
       }
@@ -147,7 +147,7 @@ async function addRemotePath(
 
   let config;
   try { config = readConfig(); } catch {
-    console.log(chalk.red("No config found. Run: skillsmanager collection create"));
+    console.log(chalk.red("No config found. Run: sm collection create"));
     return;
   }
 
@@ -163,7 +163,7 @@ async function addRemotePath(
   }
 
   if (!collection) {
-    console.log(chalk.red("No collections configured. Run: skillsmanager collection create"));
+    console.log(chalk.red("No collections configured. Run: sm collection create"));
     return;
   }
 

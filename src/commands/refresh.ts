@@ -34,7 +34,7 @@ export async function refreshCommand(): Promise<void> {
     }
     if (skippedBackends.length > 0) {
       console.log(chalk.dim(`  Skipped (not configured): ${skippedBackends.join(", ")}`));
-      console.log(chalk.dim(`  Run: skillsmanager setup ${skippedBackends[0]} to enable`));
+      console.log(chalk.dim(`  Run: sm setup ${skippedBackends[0]} to enable`));
     }
 
     const mergedRegistries = mergeRegistries(freshRegistries, existingRegistries);
@@ -86,7 +86,7 @@ export async function refreshCommand(): Promise<void> {
 
     if (mergedRegistries.length === 0) {
       console.log(chalk.yellow("No registries found."));
-      console.log(chalk.dim("  Run: skillsmanager registry create"));
+      console.log(chalk.dim("  Run: sm registry create"));
     } else {
       console.log(chalk.green(`Found ${mergedRegistries.length} registry(ies), ${mergedCollections.length} collection(s):`));
       for (const r of mergedRegistries) {

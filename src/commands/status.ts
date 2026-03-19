@@ -3,8 +3,8 @@ import { tryResolveBackend } from "../backends/resolve.js";
 
 const BACKENDS = [
   { name: "local",  hint: "" },
-  { name: "gdrive", hint: "run: skillsmanager setup google" },
-  { name: "github", hint: "run: skillsmanager setup github" },
+  { name: "gdrive", hint: "run: sm setup google" },
+  { name: "github", hint: "run: sm setup github" },
 ];
 
 export async function statusCommand(): Promise<void> {

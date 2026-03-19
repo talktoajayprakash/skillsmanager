@@ -35,7 +35,7 @@ export class GDriveBackend implements StorageBackend {
     try {
       return { loggedIn: true, identity: await this.getOwner() };
     } catch {
-      return { loggedIn: false, identity: "", hint: "run: skillsmanager setup google" };
+      return { loggedIn: false, identity: "", hint: "run: sm setup google" };
     }
   }
 

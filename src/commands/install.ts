@@ -72,7 +72,7 @@ export async function installCommand(
   }
 
   if (!fs.existsSync(SKILL_SOURCE)) {
-    console.log(chalk.red("Bundled skillsmanager skill not found. Reinstall the package."));
+    console.log(chalk.red("Bundled sm skill not found. Reinstall the package."));
     return;
   }
 
@@ -96,7 +96,7 @@ export async function installCommand(
   }
 
   // Default: install to all agents
-  console.log(chalk.dim("Installing skillsmanager skill to all agent directories...\n"));
+  console.log(chalk.dim("Installing sm skill to all agent directories...\n"));
   for (const [agent, skillsDir] of Object.entries(AGENT_PATHS)) {
     installToDir(skillsDir, agent);
   }
@@ -172,7 +172,7 @@ export function uninstallCommand(
   }
 
   // Default: uninstall from all agents
-  console.log(chalk.dim("Removing skillsmanager skill from all agent directories...\n"));
+  console.log(chalk.dim("Removing sm skill from all agent directories...\n"));
   for (const [agent, skillsDir] of Object.entries(AGENT_PATHS)) {
     uninstallFromDir(skillsDir, agent);
   }

@@ -16,7 +16,7 @@ export async function registryCreateCommand(options: { backend?: string; repo?: 
 
   if (backend === "github" && !options.repo) {
     console.log(chalk.red("GitHub backend requires --repo <owner/repo>"));
-    console.log(chalk.dim("  Example: skillsmanager registry create --backend github --repo owner/my-repo"));
+    console.log(chalk.dim("  Example: sm registry create --backend github --repo owner/my-repo"));
     return;
   }
 
@@ -44,8 +44,8 @@ export async function registryCreateCommand(options: { backend?: string; repo?: 
             const names = localCollections.map((c) => chalk.cyan(c.name)).join(", ");
             console.log(chalk.yellow(`\n  Found local registry with ${localCollections.length} collection(s): ${names}`));
             const pushCmd = backend === "github"
-              ? `skillsmanager registry push --backend github --repo ${options.repo}`
-              : `skillsmanager registry push --backend ${backend}`;
+              ? `sm registry push --backend github --repo ${options.repo}`
+              : `sm registry push --backend ${backend}`;
             console.log(chalk.dim(`  Run ${chalk.white(pushCmd)} to back them up to ${backend}.\n`));
           }
         } catch { /* local registry unreadable, skip hint */ }
@@ -59,13 +59,13 @@ export async function registryCreateCommand(options: { backend?: string; repo?: 
 export async function registryListCommand(): Promise<void> {
   let config: Config;
   try { config = readConfig(); } catch {
-    console.log(chalk.yellow("No config found. Run: skillsmanager registry create"));
+    console.log(chalk.yellow("No config found. Run: sm registry create"));
     return;
   }
 
   if (config.registries.length === 0) {
     console.log(chalk.yellow("No registries configured."));
-    console.log(chalk.dim("  Run: skillsmanager registry create"));
+    console.log(chalk.dim("  Run: sm registry create"));
     return;
   }
 
@@ -126,12 +126,12 @@ export async function registryAddCollectionCommand(
 ): Promise<void> {
   let config: Config;
   try { config = readConfig(); } catch {
-    console.log(chalk.red("No config found. Run: skillsmanager registry create"));
+    console.log(chalk.red("No config found. Run: sm registry create"));
     return;
   }
 
   if (config.registries.length === 0) {
-    console.log(chalk.red("No registries configured. Run: skillsmanager registry create"));
+    console.log(chalk.red("No registries configured. Run: sm registry create"));
     return;
   }
 
@@ -263,7 +263,7 @@ export async function registryPushCommand(options: { backend?: string; repo?: st
 
   if (targetBackend === "github" && !options.repo) {
     console.log(chalk.red("GitHub backend requires --repo <owner/repo>"));
-    console.log(chalk.dim("  Example: skillsmanager registry push --backend github --repo owner/my-repo"));
+    console.log(chalk.dim("  Example: sm registry push --backend github --repo owner/my-repo"));
     return;
   }
 
@@ -374,7 +374,7 @@ export async function registryPushCommand(options: { backend?: string; repo?: st
   } catch (err) {
     spinner.fail(`Failed to update registry: ${(err as Error).message}`);
     console.log(chalk.dim("  Collections were uploaded but the registry was not updated."));
-    console.log(chalk.dim(`  Run 'skillsmanager registry push --backend ${targetBackend}' again to retry.`));
+    console.log(chalk.dim(`  Run 'sm registry push --backend ${targetBackend}' again to retry.`));
   }
 }
 

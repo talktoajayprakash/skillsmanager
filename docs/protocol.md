@@ -79,7 +79,7 @@ collections:
 
 **Rules:**
 - A remote registry (e.g. `source: gdrive`) cannot contain `backend: local` collection refs. Local paths don't resolve on other machines.
-- `skillsmanager registry push` enforces this — it uploads all local collections to the target backend and rewrites refs before pushing.
+- `sm registry push` enforces this — it uploads all local collections to the target backend and rewrites refs before pushing.
 - A registry can reference collections on **any** backend — e.g. a gdrive registry can point to both gdrive and github collections. The backend field on each collection ref determines how it is resolved.
 
 ### SKILLS_COLLECTION.yaml
@@ -119,7 +119,7 @@ skills:
 | `type` | `github` | Skill files are fetched from a GitHub repo |
 | `metadata.repo` | `owner/repo` | The GitHub repo containing the skill files |
 
-When `type` is set, `skillsmanager install` downloads skill files from `metadata.repo` regardless of where the collection YAML lives (Drive, GitHub, local). When `type` is absent, skills are downloaded from the same backend as the collection.
+When `type` is set, `sm install` downloads skill files from `metadata.repo` regardless of where the collection YAML lives (Drive, GitHub, local). When `type` is absent, skills are downloaded from the same backend as the collection.
 
 {: .note }
 The legacy filename `SKILLS_SYNC.yaml` is still recognized for backwards compatibility.
@@ -166,7 +166,7 @@ This means cache paths don't break when you rename a collection or move it betwe
 
 ## Collection create invariant
 
-**A collection can never exist without being registered.** `skillsmanager collection create` atomically:
+**A collection can never exist without being registered.** `sm collection create` atomically:
 
 1. Creates the collection on the target backend (gdrive or github)
 2. Ensures a registry exists — if none is configured, a local registry is created automatically
@@ -178,7 +178,7 @@ This means `registry add-collection` is never a required follow-up step. It exis
 
 ## Transactional push
 
-`skillsmanager registry push --backend gdrive` (or `--backend github`) is **all-or-nothing** and **idempotent**.
+`sm registry push --backend gdrive` (or `--backend github`) is **all-or-nothing** and **idempotent**.
 
 **Idempotency:** Before uploading anything, the command reads the current remote registry and builds a set of already-synced collection names. Collections already present in the remote registry are skipped entirely — no duplicate entries, safe to re-run at any time.
 

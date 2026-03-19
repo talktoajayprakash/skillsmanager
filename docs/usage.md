@@ -11,27 +11,27 @@ All commands are non-interactive — safe to call from any AI agent. Commands fa
 
 ## Installing skills
 
-### `skillsmanager install`
+### `sm install`
 
 Installs the bundled `skillsmanager` skill into all detected agent directories.
 
 ```bash
-skillsmanager install                   # install to all agents
-skillsmanager install --agent claude    # install to a specific agent
-skillsmanager install --agent claude,cursor,openclaw  # install to multiple agents
+sm install                   # install to all agents
+sm install --agent claude    # install to a specific agent
+sm install --agent claude,cursor,openclaw  # install to multiple agents
 ```
 
-### `skillsmanager install <name>`
+### `sm install <name>`
 
 Downloads a skill from remote storage and symlinks it into an agent's skills directory.
 
 ```bash
-skillsmanager install <skill-name> --agent <agent>
+sm install <skill-name> --agent <agent>
 ```
 
 ```bash
-skillsmanager install code-review --agent claude
-skillsmanager install write-tests --agent cursor
+sm install code-review --agent claude
+sm install write-tests --agent cursor
 ```
 
 The skill is cached at `~/.skillsmanager/cache/<uuid>/<skill-name>/` and symlinked — one copy, many agents.
@@ -40,12 +40,12 @@ The skill is cached at `~/.skillsmanager/cache/<uuid>/<skill-name>/` and symlink
 
 ## Browsing skills
 
-### `skillsmanager list`
+### `sm list`
 
 Lists all skills in a tree view grouped by registry → collection → skill. GitHub collections show the source repo in the badge.
 
 ```bash
-skillsmanager list
+sm list
 ```
 
 Example output:
@@ -59,14 +59,14 @@ REGISTRY  gdrive
     └── algorithmic-art  Generates algorithmic art
 ```
 
-Collections not linked to any registry appear under `(unregistered)` — run `skillsmanager refresh` to link them.
+Collections not linked to any registry appear under `(unregistered)` — run `sm refresh` to link them.
 
-### `skillsmanager status`
+### `sm status`
 
 Shows the login state and identity for each backend.
 
 ```bash
-skillsmanager status
+sm status
 ```
 
 Example output:
@@ -76,35 +76,35 @@ Backend   Status                    Identity
 ────────  ────────────────────────  ──────────────────────────────
 local     ✓ logged in               ajay
 gdrive    ✓ logged in               you@example.com
-github    ✗ not logged in           run: skillsmanager setup github
+github    ✗ not logged in           run: sm setup github
 ```
 
 Never triggers auth flows — safe to run at any time.
 
 ---
 
-### `skillsmanager search`
+### `sm search`
 
 Full-text BM25 search across skill names and descriptions.
 
 ```bash
-skillsmanager search <query>
-skillsmanager search "code review"
-skillsmanager search linkedin
+sm search <query>
+sm search "code review"
+sm search linkedin
 ```
 
 ---
 
 ## Adding and updating skills
 
-### `skillsmanager add`
+### `sm add`
 
 Uploads a local skill directory to a collection.
 
 ```bash
-skillsmanager add <path>
-skillsmanager add ./my-skill
-skillsmanager add ./my-skill --collection work
+sm add <path>
+sm add ./my-skill
+sm add ./my-skill --collection work
 ```
 
 If `--collection` is omitted, the skill is added to the default collection.
@@ -114,25 +114,25 @@ If `--collection` is omitted, the skill is added to the default collection.
 When a collection has a cross-backend skills source (e.g. `type: github` pointing to a GitHub repo), you cannot upload local files — the files already live in the remote repo. Instead, register a path pointer with `--remote-path`:
 
 ```bash
-skillsmanager add --remote-path <path-in-repo> --name <skill-name> --description "<desc>" --collection <name>
+sm add --remote-path <path-in-repo> --name <skill-name> --description "<desc>" --collection <name>
 ```
 
 Example:
 ```bash
-skillsmanager add --remote-path skills/write-tests/ --name write-tests \
+sm add --remote-path skills/write-tests/ --name write-tests \
   --description "Generate unit tests for a function or module" \
   --collection my-curated-col
 ```
 
 This writes an entry into `SKILLS_COLLECTION.yaml` without touching any skill files. When a user installs the skill, the files are pulled from the declared `metadata.repo`.
 
-### `skillsmanager update`
+### `sm update`
 
 Pushes local changes to an existing skill back to remote storage.
 
 ```bash
-skillsmanager update <path>
-skillsmanager update ./my-skill
+sm update <path>
+sm update ./my-skill
 ```
 
 ---
@@ -141,15 +141,15 @@ skillsmanager update ./my-skill
 
 Collections are folders that group related skills. Each collection has a `SKILLS_COLLECTION.yaml` index file.
 
-### `skillsmanager collection create`
+### `sm collection create`
 
 Creates a new skill collection.
 
 ```bash
-skillsmanager collection create
-skillsmanager collection create my-collection
-skillsmanager collection create my-collection --backend github --repo owner/repo
-skillsmanager collection create my-collection --backend gdrive
+sm collection create
+sm collection create my-collection
+sm collection create my-collection --backend github --repo owner/repo
+sm collection create my-collection --backend gdrive
 ```
 
 **Cross-backend collections: `--skills-repo`**
@@ -158,13 +158,13 @@ Use `--skills-repo` to create a collection whose skill files live in a specific 
 
 ```bash
 # Collection YAML in Google Drive, skill files in a GitHub repo
-skillsmanager collection create curated --backend gdrive --skills-repo owner/skills-repo
+sm collection create curated --backend gdrive --skills-repo owner/skills-repo
 
 # Collection YAML in one GitHub repo, skill files in another
-skillsmanager collection create curated --backend github --repo owner/registry-repo --skills-repo owner/skills-repo
+sm collection create curated --backend github --repo owner/registry-repo --skills-repo owner/skills-repo
 ```
 
-This sets `type: github` and `metadata.repo` in the generated `SKILLS_COLLECTION.yaml`. After creating such a collection, register skill entries with `skillsmanager add --remote-path ...` rather than uploading files.
+This sets `type: github` and `metadata.repo` in the generated `SKILLS_COLLECTION.yaml`. After creating such a collection, register skill entries with `sm add --remote-path ...` rather than uploading files.
 
 ---
 
@@ -172,69 +172,69 @@ This sets `type: github` and `metadata.repo` in the generated `SKILLS_COLLECTION
 
 A registry is the root index that points to all your collections. See the [Protocol spec](./protocol) for the full architecture.
 
-### `skillsmanager registry create`
+### `sm registry create`
 
 Creates a new local registry.
 
 ```bash
-skillsmanager registry create
-skillsmanager registry create --backend gdrive   # create directly in Google Drive
+sm registry create
+sm registry create --backend gdrive   # create directly in Google Drive
 ```
 
-### `skillsmanager registry list`
+### `sm registry list`
 
 Shows all registries and their collections.
 
 ```bash
-skillsmanager registry list
+sm registry list
 ```
 
-### `skillsmanager registry push`
+### `sm registry push`
 
 Pushes a local registry and all its collections to a remote backend. Transactional — all-or-nothing.
 
 ```bash
-skillsmanager registry push --backend gdrive
+sm registry push --backend gdrive
 ```
 
-### `skillsmanager registry discover`
+### `sm registry discover`
 
 Searches a backend for existing registries and adds them to local config.
 
 ```bash
-skillsmanager registry discover --backend gdrive
+sm registry discover --backend gdrive
 ```
 
-### `skillsmanager registry add-collection`
+### `sm registry add-collection`
 
 Adds a collection reference to the registry.
 
 ```bash
-skillsmanager registry add-collection <name>
+sm registry add-collection <name>
 ```
 
 ---
 
 ## Discovery and sync
 
-### `skillsmanager refresh`
+### `sm refresh`
 
 Re-discovers collections from all connected backends and updates the local index.
 
 ```bash
-skillsmanager refresh
+sm refresh
 ```
 
 ---
 
 ## Google Drive setup
 
-### `skillsmanager setup google`
+### `sm setup google`
 
 One-time interactive wizard for Google Drive authentication. Human-facing only — not for agent use.
 
 ```bash
-skillsmanager setup google
+sm setup google
 ```
 
 ---

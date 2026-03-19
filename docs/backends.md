@@ -35,8 +35,8 @@ Skills stored as folders in your Google Drive. Discovered automatically via Driv
 **Setup:**
 
 ```bash
-skillsmanager setup google    # one-time wizard
-skillsmanager refresh         # discover your collections
+sm setup google    # one-time wizard
+sm refresh         # discover your collections
 ```
 
 Folder naming in Drive: all folders are prefixed with `SKILLS_` to avoid conflicts with regular folders. The CLI strips the prefix — you always work with the clean name.
@@ -92,7 +92,7 @@ A collection can declare that its skill files live in a **different backend** th
 
 ```bash
 # Create a collection in Google Drive whose skills come from a GitHub repo
-skillsmanager collection create curated --backend gdrive --skills-repo owner/skills-repo
+sm collection create curated --backend gdrive --skills-repo owner/skills-repo
 ```
 
 This writes `type: github` and `metadata.repo: owner/skills-repo` into the `SKILLS_COLLECTION.yaml` stored in Drive.
@@ -108,9 +108,9 @@ Google Drive       →    GitHub repo (owner/skills-repo)
     metadata.repo: ...
 ```
 
-- `skillsmanager install write-tests --agent <agent>` → downloads from `owner/skills-repo` (via `gh`) regardless of where the collection YAML lives
-- `skillsmanager add ./local-skill --collection curated` → **error**: collection has a cross-backend source. Use `--remote-path` instead.
-- `skillsmanager add --remote-path skills/write-tests/ --name write-tests --description "..." --collection curated` → registers a path pointer in the YAML, no file upload
+- `sm install write-tests --agent <agent>` → downloads from `owner/skills-repo` (via `gh`) regardless of where the collection YAML lives
+- `sm add ./local-skill --collection curated` → **error**: collection has a cross-backend source. Use `--remote-path` instead.
+- `sm add --remote-path skills/write-tests/ --name write-tests --description "..." --collection curated` → registers a path pointer in the YAML, no file upload
 
 **RoutingBackend:** All backends are automatically wrapped with a `RoutingBackend` decorator that reads the collection's `type` field and dispatches skill-file operations to the appropriate handler. Individual backends stay pure — `GDriveBackend` never needs to know about GitHub, and vice versa.
 

@@ -93,37 +93,37 @@ The prefix is stripped everywhere in the CLI — users and agents always work wi
 
 ```bash
 # Google Drive setup (human-facing, interactive, one-time)
-skillsmanager setup google
+sm setup google
 # GitHub: no setup needed — requires gh CLI authenticated via: gh auth login
 
 # Discover / refresh collections
-skillsmanager refresh
+sm refresh
 
 # Browse skills
-skillsmanager list
-skillsmanager search <query>
+sm list
+sm search <query>
 
 # Install a skill into an agent's skills directory
-skillsmanager install <name> --agent <agent>
+sm install <name> --agent <agent>
 
 # Add a local skill to a collection
-skillsmanager add <path>
-skillsmanager add <path> --collection <name>
+sm add <path>
+sm add <path> --collection <name>
 
 # Push local changes to an existing skill back to remote
-skillsmanager update <path>
+sm update <path>
 
 # Manage collections (auto-registers in the existing registry)
-skillsmanager collection create [name]                                       # gdrive
-skillsmanager collection create [name] --backend github --repo <owner/repo>  # github
+sm collection create [name]                                       # gdrive
+sm collection create [name] --backend github --repo <owner/repo>  # github
 
 # Registry management
-skillsmanager registry list
-skillsmanager registry create [--backend gdrive|github] [--repo <owner/repo>]
-skillsmanager registry push --backend gdrive|github [--repo <owner/repo>]    # idempotent: skips already-synced collections
-skillsmanager registry discover --backend gdrive|github
-skillsmanager registry add-collection <name>
-skillsmanager registry remove-collection <name> [--delete]
+sm registry list
+sm registry create [--backend gdrive|github] [--repo <owner/repo>]
+sm registry push --backend gdrive|github [--repo <owner/repo>]    # idempotent: skips already-synced collections
+sm registry discover --backend gdrive|github
+sm registry add-collection <name>
+sm registry remove-collection <name> [--delete]
 ```
 
 ### Agent-first design
@@ -136,11 +136,11 @@ All commands except `setup google` are **non-interactive** — they never block 
 
 No explicit login step required. Any command that needs Drive access calls `ensureAuth()` which:
 
-1. Checks `~/.skillsmanager/credentials.json` exists — if not, throws with `Run: skillsmanager setup google`
+1. Checks `~/.skillsmanager/credentials.json` exists — if not, throws with `Run: sm setup google`
 2. Checks `~/.skillsmanager/token.json` exists — if not, launches the OAuth flow automatically
 3. Returns the authenticated client with auto-refresh on token expiry
 
-`skillsmanager setup google` is the one-time human-facing wizard that walks through:
+`sm setup google` is the one-time human-facing wizard that walks through:
 1. Installing `gcloud` CLI (via Homebrew on macOS)
 2. `gcloud auth login`
 3. Creating or selecting a Google Cloud project
@@ -173,7 +173,7 @@ Skills are cached locally at:
 
 The UUID is a stable identifier assigned per collection in `config.json`. It is backend-agnostic — it does not encode the backend type or folder ID. This keeps cache paths stable even if a collection is renamed or migrated to a different backend.
 
-When `skillsmanager install write-linkedin-post --agent claude` is run:
+When `sm install write-linkedin-post --agent claude` is run:
 1. Looks up which collection owns the skill
 2. Downloads to `~/.skillsmanager/cache/<uuid>/write-linkedin-post/`
 3. Creates symlink: `~/.claude/skills/write-linkedin-post → ~/.skillsmanager/cache/<uuid>/write-linkedin-post/`
@@ -262,7 +262,7 @@ metadata:
   repo: owner/skills-repo   # type-specific config
 ```
 
-When `type` is absent, skill files come from the same backend as the collection YAML. When `type: github` is set, `skillsmanager install` downloads skill files from `metadata.repo` regardless of where the collection YAML is stored.
+When `type` is absent, skill files come from the same backend as the collection YAML. When `type: github` is set, `sm install` downloads skill files from `metadata.repo` regardless of where the collection YAML is stored.
 
 ### RoutingBackend — the decorator pattern
 
@@ -300,10 +300,10 @@ All other methods (registry ops, `readCollection`, `writeCollection`) pass strai
 
 ### `--remote-path` for cross-backend `add`
 
-When a collection has `type: github`, uploading local skill files makes no sense — the canonical files live in the GitHub repo. `skillsmanager add --remote-path` registers a skill entry (path + name + description) into the collection YAML without touching any skill files:
+When a collection has `type: github`, uploading local skill files makes no sense — the canonical files live in the GitHub repo. `sm add --remote-path` registers a skill entry (path + name + description) into the collection YAML without touching any skill files:
 
 ```bash
-skillsmanager add --remote-path skills/write-tests/ --name write-tests \
+sm add --remote-path skills/write-tests/ --name write-tests \
   --description "Generate unit tests" --collection curated-col
 ```
 
@@ -346,7 +346,7 @@ interface StorageBackend {
 
 Note: `discoverRegistries` returns without `id` — UUID assignment is handled by the config layer (`mergeRegistries()`), not the backend. This keeps backends storage-agnostic.
 
-`getStatus()` returns login state and identity without triggering auth flows. The companion `tryResolveBackend()` in `resolve.ts` constructs a backend without calling `ensureAuth()` — returns `null` for unconfigured backends (e.g. gdrive with no token) rather than launching a browser OAuth flow. Used by `skillsmanager status`.
+`getStatus()` returns login state and identity without triggering auth flows. The companion `tryResolveBackend()` in `resolve.ts` constructs a backend without calling `ensureAuth()` — returns `null` for unconfigured backends (e.g. gdrive with no token) rather than launching a browser OAuth flow. Used by `sm status`.
 
 ### Implemented backends
 
@@ -358,7 +358,7 @@ Note: `discoverRegistries` returns without `id` — UUID assignment is handled b
 **Google Drive**
 - Discovery: searches for `SKILLS_REGISTRY.yaml` owned by the user across all of Drive
 - Download/upload: recursive folder operations via Drive API v3
-- Auth: OAuth2 Desktop app flow — user creates their own Google Cloud project via `skillsmanager setup google`
+- Auth: OAuth2 Desktop app flow — user creates their own Google Cloud project via `sm setup google`
 - Folder naming: `SKILLS_` prefix to distinguish from regular Drive folders
 
 **GitHub**
@@ -392,7 +392,7 @@ Note: `discoverRegistries` returns without `id` — UUID assignment is handled b
 
 | Decision | Choice | Reason |
 |---|---|---|
-| CLI name | `skillsmanager` | Avoids conflicts with `sk`, `skills` |
+| CLI name | `sm` | Avoids conflicts with `sk`, `skills` |
 | Skill structure | Flat, globally unique names | No category nesting — simpler for agents to reference |
 | Two-tier layout | Registry → Collections → Skills | Registry is the discovery root; collections are independently portable |
 | Collection file | `SKILLS_COLLECTION.yaml` | Human-readable, lives alongside skills in any storage |

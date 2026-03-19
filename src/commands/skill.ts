@@ -13,7 +13,7 @@ export async function skillDeleteCommand(
   try {
     config = readConfig();
   } catch {
-    console.log(chalk.red("No config found. Run `skillsmanager refresh` first."));
+    console.log(chalk.red("No config found. Run `sm refresh` first."));
     return;
   }
 

@@ -94,7 +94,7 @@ graph TD
 
 ```bash
 npm install -g @skillsmanager/cli
-skillsmanager install    # install the skillsmanager skill to all detected agents
+sm install    # install the skillsmanager skill to all detected agents
 ```
 
 → [Full getting started guide](./getting-started)

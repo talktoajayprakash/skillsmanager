@@ -161,7 +161,7 @@ async function printPushNudgeIfNeeded(): Promise<void> {
     if (localCollections.length === 0) return;
     const names = localCollections.map((c) => chalk.cyan(c.name)).join(", ");
     console.log(chalk.yellow(`\n  Found local registry with ${localCollections.length} collection(s): ${names}`));
-    console.log(chalk.dim(`  Run ${chalk.white("skillsmanager registry push --backend gdrive")} to back them up to Google Drive.\n`));
+    console.log(chalk.dim(`  Run ${chalk.white("sm registry push --backend gdrive")} to back them up to Google Drive.\n`));
   } catch { /* unreadable config, skip hint */ }
 }
 
@@ -176,7 +176,7 @@ export async function setupGoogleCommand(): Promise<void> {
     if (hasToken()) {
       console.log(chalk.green("  ✓ Already authenticated — nothing to do."));
       await printPushNudgeIfNeeded();
-      console.log(`Run ${chalk.bold("skillsmanager refresh")} to discover registries.\n`);
+      console.log(`Run ${chalk.bold("sm refresh")} to discover registries.\n`);
       return;
     }
     console.log(chalk.yellow("  ✗ Not yet authenticated — starting OAuth flow...\n"));
@@ -184,7 +184,7 @@ export async function setupGoogleCommand(): Promise<void> {
     const authedEmail = await getAuthedEmail(client);
     console.log(chalk.green(`\n  ✓ Authenticated successfully${authedEmail ? ` as ${chalk.white(authedEmail)}` : ""}.`));
     await printPushNudgeIfNeeded();
-    console.log(`Run ${chalk.bold("skillsmanager refresh")} to discover registries.\n`);
+    console.log(`Run ${chalk.bold("sm refresh")} to discover registries.\n`);
     return;
   }
 
@@ -206,7 +206,7 @@ export async function setupGoogleCommand(): Promise<void> {
     const install = await confirm("  Install it now via Homebrew?");
     if (!install) {
       console.log(chalk.dim("  Install manually: https://cloud.google.com/sdk/docs/install"));
-      console.log(chalk.dim("  Then re-run: skillsmanager setup google"));
+      console.log(chalk.dim("  Then re-run: sm setup google"));
       return;
     }
     const ok = await installGcloud();
@@ -345,7 +345,7 @@ export async function setupGoogleCommand(): Promise<void> {
   const authedEmail = await getAuthedEmail(client);
   console.log(chalk.green(`\n  ✓ Setup complete! Authenticated as ${chalk.white(authedEmail ?? account)}`));
   await printPushNudgeIfNeeded();
-  console.log(`Run ${chalk.bold("skillsmanager refresh")} to discover your registries.\n`);
+  console.log(`Run ${chalk.bold("sm refresh")} to discover your registries.\n`);
 }
 
 function printManualInstructions(): void {
@@ -364,5 +364,5 @@ function printManualInstructions(): void {
   console.log("       Application type: Desktop app");
   console.log("  6. Download the JSON and save it:");
   console.log(chalk.cyan(`       ~/.skillsmanager/credentials.json`));
-  console.log(`\n  Then run: ${chalk.bold("skillsmanager setup google")}\n`);
+  console.log(`\n  Then run: ${chalk.bold("sm setup google")}\n`);
 }

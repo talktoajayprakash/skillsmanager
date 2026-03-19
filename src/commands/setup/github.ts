@@ -62,7 +62,7 @@ export async function setupGithubCommand(): Promise<void> {
 
     if (!ans.startsWith("y")) {
       console.log(chalk.dim("  Install manually: https://cli.github.com/manual/installation"));
-      console.log(chalk.dim("  Then re-run: skillsmanager setup github"));
+      console.log(chalk.dim("  Then re-run: sm setup github"));
       return;
     }
 
@@ -102,5 +102,5 @@ export async function setupGithubCommand(): Promise<void> {
   }
 
   console.log(chalk.green("\n  ✓ GitHub setup complete!"));
-  console.log(`\nRun ${chalk.bold("skillsmanager collection create --backend github")} to create a collection.\n`);
+  console.log(`\nRun ${chalk.bold("sm collection create --backend github")} to create a collection.\n`);
 }

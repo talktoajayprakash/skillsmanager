@@ -40,7 +40,7 @@ npm install -g @skillsmanager/cli
 ### 2. Install the skillsmanager skill (lets your agent drive Skills Manager)
 
 ```bash
-skillsmanager install
+sm install
 ```
 
 This installs the bundled `skillsmanager` skill into all detected agents so your AI assistant can manage skills on your behalf.
@@ -57,46 +57,46 @@ Skills Manager supports Google Drive and GitHub as remote backends.
 4. Download `credentials.json` and save it to `~/.skillsmanager/credentials.json`
 
 ```bash
-skillsmanager setup google   # walks you through OAuth
-skillsmanager refresh        # discovers collections in your Drive
+sm setup google   # walks you through OAuth
+sm refresh        # discovers collections in your Drive
 ```
 
 **GitHub:**
 
 ```bash
-skillsmanager setup github   # checks gh CLI and authenticates
-skillsmanager refresh        # discovers collections in your repos
+sm setup github   # checks gh CLI and authenticates
+sm refresh        # discovers collections in your repos
 ```
 
 ## Commands
 
 | Command | Description |
 |---|---|
-| `skillsmanager status` | Show login status and identity for each backend |
-| `skillsmanager install` | Install the skillsmanager skill to all agents |
-| `skillsmanager uninstall` | Remove the skillsmanager skill from agent directories |
-| `skillsmanager list` | List all available skills |
-| `skillsmanager search <query>` | Search skills by name or description |
-| `skillsmanager install <name> --agent <agent>` | Download and install a skill for an agent |
-| `skillsmanager uninstall <name> --agent <agent>` | Remove a skill's symlink (cache untouched) |
-| `skillsmanager add <path>` | Upload a local skill to a collection |
-| `skillsmanager add --remote-path <path> --name <n> --description <d>` | Register a remote skill path (no upload) |
-| `skillsmanager update <path>` | Push local changes back to remote storage |
-| `skillsmanager refresh` | Re-discover collections from remote |
-| `skillsmanager skill delete <name>` | Delete a skill from a collection |
-| `skillsmanager collection create [name] --backend github --repo <owner/repo>` | Create a collection in a GitHub repo |
-| `skillsmanager collection create [name] --skills-repo <owner/repo>` | Create a collection with skills in a separate GitHub repo |
-| `skillsmanager registry create` | Create a new local registry |
-| `skillsmanager registry list` | Show all registries and their collections |
-| `skillsmanager registry discover` | Search a backend for registries owned by the current user |
-| `skillsmanager registry add-collection <name>` | Add a collection reference to the registry |
-| `skillsmanager registry remove-collection <name>` | Remove a collection reference from the registry |
-| `skillsmanager registry push --backend gdrive` | Push local registry to Google Drive |
-| `skillsmanager registry push --backend github --repo <owner/repo>` | Push local registry to GitHub |
-| `skillsmanager setup google` | One-time Google Drive setup |
-| `skillsmanager setup github` | One-time GitHub setup (checks gh CLI and authenticates) |
-| `skillsmanager logout google` | Clear Google OAuth session |
-| `skillsmanager logout github` | Log out of GitHub |
+| `sm status` | Show login status and identity for each backend |
+| `sm install` | Install the skillsmanager skill to all agents |
+| `sm uninstall` | Remove the skillsmanager skill from agent directories |
+| `sm list` | List all available skills |
+| `sm search <query>` | Search skills by name or description |
+| `sm install <name> --agent <agent>` | Download and install a skill for an agent |
+| `sm uninstall <name> --agent <agent>` | Remove a skill's symlink (cache untouched) |
+| `sm add <path>` | Upload a local skill to a collection |
+| `sm add --remote-path <path> --name <n> --description <d>` | Register a remote skill path (no upload) |
+| `sm update <path>` | Push local changes back to remote storage |
+| `sm refresh` | Re-discover collections from remote |
+| `sm skill delete <name>` | Delete a skill from a collection |
+| `sm collection create [name] --backend github --repo <owner/repo>` | Create a collection in a GitHub repo |
+| `sm collection create [name] --skills-repo <owner/repo>` | Create a collection with skills in a separate GitHub repo |
+| `sm registry create` | Create a new local registry |
+| `sm registry list` | Show all registries and their collections |
+| `sm registry discover` | Search a backend for registries owned by the current user |
+| `sm registry add-collection <name>` | Add a collection reference to the registry |
+| `sm registry remove-collection <name>` | Remove a collection reference from the registry |
+| `sm registry push --backend gdrive` | Push local registry to Google Drive |
+| `sm registry push --backend github --repo <owner/repo>` | Push local registry to GitHub |
+| `sm setup google` | One-time Google Drive setup |
+| `sm setup github` | One-time GitHub setup (checks gh CLI and authenticates) |
+| `sm logout google` | Clear Google OAuth session |
+| `sm logout github` | Log out of GitHub |
 
 ## Local Development
 
@@ -105,7 +105,7 @@ git clone https://github.com/talktoajayprakash/skillsmanager.git
 cd skillsmanager
 npm install
 npm run build       # compiles TypeScript to dist/
-npm link            # makes `skillsmanager` available globally from source
+npm link            # makes `sm` available globally from source
 ```
 
 Run tests:

@@ -20,7 +20,7 @@ export async function initCommand(): Promise<void> {
 
   if (collections.length === 0) {
     console.log(chalk.yellow("  No collections found."));
-    console.log(chalk.dim('  Run: skillsmanager collection create <name>'));
+    console.log(chalk.dim('  Run: sm collection create <name>'));
   } else {
     console.log(chalk.green(`  ✓ Found ${collections.length} collection(s):`));
     for (const c of collections) {
@@ -38,5 +38,5 @@ export async function initCommand(): Promise<void> {
   ).reduce((sum, col) => sum + col.skills.length, 0);
 
   console.log(`\n${totalSkills} skills across ${collections.length} collection(s).`);
-  console.log(`\nRun ${chalk.bold("skillsmanager list")} to browse all available skills.\n`);
+  console.log(`\nRun ${chalk.bold("sm list")} to browse all available skills.\n`);
 }

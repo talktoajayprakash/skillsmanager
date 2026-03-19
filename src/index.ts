@@ -37,7 +37,7 @@ try {
 } catch { /* use fallback */ }
 
 program
-  .name("skillsmanager")
+  .name("sm")
   .description(helpText)
   .version(pkg.version);
 
@@ -201,7 +201,7 @@ registry
 
 program
   .command("install [name]")
-  .description("Install skillsmanager skill to agent dirs, or install a named skill")
+  .description("Install sm skill to agent dirs, or install a named skill")
   .option("--agent <agent>", `Agent to install for (${supportedAgents})`)
   .option("--scope <scope>", "global (~/.agent/skills/) or project (./.agent/skills/)", "global")
   .option("--path <dir>", "Custom directory to install to")
@@ -211,7 +211,7 @@ program
 
 program
   .command("uninstall [name]")
-  .description("Remove skillsmanager skill from agent dirs, or remove a named skill's symlink")
+  .description("Remove sm skill from agent dirs, or remove a named skill's symlink")
   .option("--agent <agent>", `Agent to uninstall from (${supportedAgents})`)
   .option("--scope <scope>", "global or project", "global")
   .option("--path <dir>", "Custom directory to remove from")

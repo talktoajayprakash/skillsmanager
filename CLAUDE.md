@@ -10,33 +10,33 @@ For a full understanding of the design, decisions, and architecture read **[docs
 
 - **npm package**: `@skillsmanager/cli`
 - **Install**: `npm install -g @skillsmanager/cli`
-- **CLI binary**: `skillsmanager`
+- **CLI binary**: `sm` (alias: `skillsmanager`)
 
 ## Quick reference
 
 ```bash
-skillsmanager install                            # install skillsmanager skill to all agents
-skillsmanager uninstall                          # remove skillsmanager skill from agent directories
-skillsmanager install <name> --agent <agent>     # install a named skill
-skillsmanager uninstall <name> --agent <agent>   # remove skill symlink (cache untouched)
-skillsmanager search <query>                     # search by name or description (BM25)
-skillsmanager add <path>                         # upload a local skill to a collection
-skillsmanager update <path>                      # push local changes back to storage
-skillsmanager list                               # list all available skills
-skillsmanager refresh                            # re-discover collections
-skillsmanager status                             # show login status and identity for each backend
-skillsmanager skill delete <name>                # delete a skill from a collection
-skillsmanager collection create                  # create a new collection (--backend gdrive|github)
-skillsmanager registry create                    # create a registry (--backend local|gdrive|github)
-skillsmanager registry list                      # show registries and collections
-skillsmanager registry discover                  # search a backend for registries owned by current user
-skillsmanager registry add-collection <name>     # add a collection reference to the registry
-skillsmanager registry remove-collection <name>  # remove a collection reference from the registry
-skillsmanager registry push --backend gdrive     # push local data to Google Drive
-skillsmanager setup google                       # one-time Google Drive setup (human-facing)
-skillsmanager setup github                       # one-time GitHub setup (checks gh CLI, runs gh auth login)
-skillsmanager logout google                      # clear Google OAuth session
-skillsmanager logout github                      # log out of GitHub
+sm install                            # install skillsmanager skill to all agents
+sm uninstall                          # remove skillsmanager skill from agent directories
+sm install <name> --agent <agent>     # install a named skill
+sm uninstall <name> --agent <agent>   # remove skill symlink (cache untouched)
+sm search <query>                     # search by name or description (BM25)
+sm add <path>                         # upload a local skill to a collection
+sm update <path>                      # push local changes back to storage
+sm list                               # list all available skills
+sm refresh                            # re-discover collections
+sm status                             # show login status and identity for each backend
+sm skill delete <name>                # delete a skill from a collection
+sm collection create                  # create a new collection (--backend gdrive|github)
+sm registry create                    # create a registry (--backend local|gdrive|github)
+sm registry list                      # show registries and collections
+sm registry discover                  # search a backend for registries owned by current user
+sm registry add-collection <name>     # add a collection reference to the registry
+sm registry remove-collection <name>  # remove a collection reference from the registry
+sm registry push --backend gdrive     # push local data to Google Drive
+sm setup google                       # one-time Google Drive setup (human-facing)
+sm setup github                       # one-time GitHub setup (checks gh CLI, runs gh auth login)
+sm logout google                      # clear Google OAuth session
+sm logout github                      # log out of GitHub
 ```
 
 ## Key files

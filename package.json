@@ -1,9 +1,10 @@
 {
   "name": "@skillsmanager/cli",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Discover, fetch, and manage agent skills from local or remote storage",
   "type": "module",
   "bin": {
+    "sm": "dist/index.js",
     "skillsmanager": "dist/index.js"
   },
   "files": [

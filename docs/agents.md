@@ -28,24 +28,24 @@ Skills Manager installs skills by symlinking from its local cache into each agen
 ## Installing a skill to an agent
 
 ```bash
-skillsmanager install <skill-name> --agent <agent>
+sm install <skill-name> --agent <agent>
 
 # examples
-skillsmanager install code-review --agent claude
-skillsmanager install code-review --agent openclaw
-skillsmanager install code-review --agent cursor,windsurf   # multiple agents
+sm install code-review --agent claude
+sm install code-review --agent openclaw
+sm install code-review --agent cursor,windsurf   # multiple agents
 ```
 
 ## Installing to all agents
 
 ```bash
-skillsmanager install        # installs the skillsmanager skill to every detected agent
+sm install        # installs the skillsmanager skill to every detected agent
 ```
 
 ## Installing to a custom path
 
 ```bash
-skillsmanager install --path /path/to/custom/skills/dir
+sm install --path /path/to/custom/skills/dir
 ```
 
 ---

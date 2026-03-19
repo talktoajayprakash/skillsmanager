@@ -14,10 +14,10 @@ git clone https://github.com/talktoajayprakash/skillsmanager.git
 cd skillsmanager
 npm install
 npm run build
-npm link   # makes `skillsmanager` point to your local build
+npm link   # makes `sm` point to your local build
 ```
 
-After `npm link`, the `skillsmanager` command in your shell runs your local source.
+After `npm link`, the `sm` command in your shell runs your local source.
 
 ## Development workflow
 

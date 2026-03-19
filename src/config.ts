@@ -20,7 +20,7 @@ export function ensureCacheDir(): void {
 
 export function readConfig(): Config {
   if (!fs.existsSync(CONFIG_PATH)) {
-    throw new Error(`No config found. Run "skillsmanager init" first.`);
+    throw new Error(`No config found. Run "sm init" first.`);
   }
   const raw = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf-8")) as Record<string, unknown>;
   // Backwards compat: very old configs used "registries" key for collections
@@ -137,7 +137,7 @@ export function readCredentials(): {
         `  2. Create a project and enable the Google Drive API\n` +
         `  3. Create OAuth 2.0 credentials (Desktop app type)\n` +
         `  4. Download the JSON and save as ${CREDENTIALS_PATH}\n` +
-        `  5. Run "skillsmanager init" again`
+        `  5. Run "sm init" again`
     );
   }
   const raw = JSON.parse(fs.readFileSync(CREDENTIALS_PATH, "utf-8"));

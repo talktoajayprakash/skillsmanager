@@ -112,7 +112,7 @@ export async function listCommand(): Promise<void> {
       console.log(chalk.yellow("No skills found across any collections."));
       console.log(
         chalk.dim(
-          'Run "skillsmanager collection create <name>" to create a collection, then "skillsmanager add <path>" to add skills.'
+          'Run "sm collection create <name>" to create a collection, then "sm add <path>" to add skills.'
         )
       );
       return;
@@ -144,7 +144,7 @@ export async function listCommand(): Promise<void> {
     const orphans = byRegistry.get(null);
     if (orphans && orphans.length > 0) {
       console.log(
-        `${chalk.bold.white("(unregistered)")}  ${chalk.dim("run 'skillsmanager refresh' to link to a registry")}`
+        `${chalk.bold.white("(unregistered)")}  ${chalk.dim("run 'sm refresh' to link to a registry")}`
       );
       renderCollections(orphans, collectionSkills, collectionFiles, config.skills);
       console.log();

@@ -26,7 +26,7 @@ export async function logoutGoogleCommand(options: { all?: boolean }): Promise<v
   }
 
   if (removed) {
-    console.log(chalk.dim("\n  Run skillsmanager setup google to set up again."));
+    console.log(chalk.dim("\n  Run sm setup google to set up again."));
   }
 }
 

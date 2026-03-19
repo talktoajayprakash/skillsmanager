@@ -92,7 +92,7 @@ export async function getAuthedEmail(client: OAuth2Client): Promise<string | nul
 
 export function getAuthClient(): OAuth2Client {
   if (!fs.existsSync(TOKEN_PATH)) {
-    throw new Error(`Not authenticated. Run "skillsmanager init" first.`);
+    throw new Error(`Not authenticated. Run "sm init" first.`);
   }
   const client = createOAuth2Client();
   const token = JSON.parse(fs.readFileSync(TOKEN_PATH, "utf-8"));
@@ -114,7 +114,7 @@ export function hasToken(): boolean {
 export async function ensureAuth(): Promise<OAuth2Client> {
   if (!credentialsExist()) {
     throw new Error(
-      "No credentials found. Run: skillsmanager setup google"
+      "No credentials found. Run: sm setup google"
     );
   }
   if (!hasToken()) {
