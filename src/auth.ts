@@ -111,6 +111,22 @@ export function hasToken(): boolean {
   return fs.existsSync(TOKEN_PATH);
 }
 
+/**
+ * Validates the stored token by making a lightweight API call.
+ * Also exercises the token refresh path — if the access token is expired
+ * but the refresh token is still valid, the library will auto-refresh.
+ * Returns the authenticated email on success, or null if the token is stale.
+ */
+export async function validateToken(): Promise<string | null> {
+  if (!hasToken()) return null;
+  try {
+    const client = getAuthClient();
+    return await getAuthedEmail(client);
+  } catch {
+    return null;
+  }
+}
+
 export async function ensureAuth(): Promise<OAuth2Client> {
   if (!credentialsExist()) {
     throw new Error(

@@ -5,7 +5,7 @@ import readline from "readline";
 import { execSync, spawnSync } from "child_process";
 import chalk from "chalk";
 import { CREDENTIALS_PATH, TOKEN_PATH, ensureConfigDir, CONFIG_PATH, readConfig } from "../../config.js";
-import { runAuthFlow, hasToken, getAuthedEmail } from "../../auth.js";
+import { runAuthFlow, hasToken, validateToken, getAuthedEmail } from "../../auth.js";
 import { credentialsExist } from "../../config.js";
 import { LocalBackend } from "../../backends/local.js";
 
@@ -173,11 +173,15 @@ export async function setupGoogleCommand(): Promise<void> {
   // ── Case 1: credentials.json already present ──────────────────────────────
   if (credentialsExist()) {
     console.log(chalk.green("  ✓ credentials.json found"));
-    if (hasToken()) {
-      console.log(chalk.green("  ✓ Already authenticated — nothing to do."));
+    const email = await validateToken();
+    if (email) {
+      console.log(chalk.green(`  ✓ Already authenticated as ${chalk.white(email)} — nothing to do.`));
       await printPushNudgeIfNeeded();
       console.log(`Run ${chalk.bold("sm refresh")} to discover registries.\n`);
       return;
+    }
+    if (hasToken()) {
+      console.log(chalk.yellow("  ✗ Token is expired or invalid — re-authenticating...\n"));
     }
     console.log(chalk.yellow("  ✗ Not yet authenticated — starting OAuth flow...\n"));
     const client = await runAuthFlow();
