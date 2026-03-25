@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import fs from "fs";
 import path from "path";
 import os from "os";
+import { createSymlink } from "../cache.js";
 
 function makeTmpDir(): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), "skillsmanager-install-test-"));
@@ -217,5 +218,103 @@ describe("uninstall", () => {
 
     expect(fs.existsSync(claudeLink)).toBe(false);
     expect(fs.existsSync(path.join(tmpAgentDirs.codex, "skillsmanager"))).toBe(true);
+  });
+});
+
+describe("createSymlink", () => {
+  let cachePath: string;
+
+  beforeEach(() => {
+    // Create a fake cache directory with skill content
+    cachePath = path.join(makeTmpDir(), "my-skill");
+    fs.mkdirSync(cachePath, { recursive: true });
+    fs.writeFileSync(path.join(cachePath, "SKILL.md"), "cached skill");
+  });
+
+  afterEach(() => {
+    fs.rmSync(path.dirname(cachePath), { recursive: true, force: true });
+  });
+
+  it("creates a symlink when target does not exist", () => {
+    const result = createSymlink("my-skill", cachePath, "claude");
+
+    const linkPath = path.join(result.skillsDir, "my-skill");
+    expect(result.skipped).toBe(false);
+    expect(fs.lstatSync(linkPath).isSymbolicLink()).toBe(true);
+    expect(fs.readlinkSync(linkPath)).toBe(cachePath);
+  });
+
+  it("replaces an existing symlink", () => {
+    // First install
+    const result1 = createSymlink("my-skill", cachePath, "claude");
+    expect(result1.skipped).toBe(false);
+
+    // Create a new cache path to verify the symlink gets updated
+    const newCachePath = path.join(makeTmpDir(), "my-skill-v2");
+    fs.mkdirSync(newCachePath, { recursive: true });
+    fs.writeFileSync(path.join(newCachePath, "SKILL.md"), "updated skill");
+
+    // Second install — should replace the symlink
+    const result2 = createSymlink("my-skill", newCachePath, "claude");
+    expect(result2.skipped).toBe(false);
+
+    const linkPath = path.join(result2.skillsDir, "my-skill");
+    expect(fs.lstatSync(linkPath).isSymbolicLink()).toBe(true);
+    expect(fs.readlinkSync(linkPath)).toBe(newCachePath);
+
+    fs.rmSync(path.dirname(newCachePath), { recursive: true, force: true });
+  });
+
+  it("skips when a real directory exists (authored source)", () => {
+    const skillsDir = tmpAgentDirs.claude;
+    fs.mkdirSync(skillsDir, { recursive: true });
+
+    // Create a real directory (user-authored skill)
+    const realDir = path.join(skillsDir, "my-skill");
+    fs.mkdirSync(realDir);
+    fs.writeFileSync(path.join(realDir, "SKILL.md"), "original authored skill");
+
+    const result = createSymlink("my-skill", cachePath, "claude");
+
+    expect(result.skipped).toBe(true);
+    // The original directory should be untouched
+    expect(fs.lstatSync(realDir).isSymbolicLink()).toBe(false);
+    expect(fs.readFileSync(path.join(realDir, "SKILL.md"), "utf-8")).toBe("original authored skill");
+  });
+
+  it("skips when a real file exists (not a directory)", () => {
+    const skillsDir = tmpAgentDirs.claude;
+    fs.mkdirSync(skillsDir, { recursive: true });
+
+    // Create a real file at the skill path
+    const filePath = path.join(skillsDir, "my-skill");
+    fs.writeFileSync(filePath, "some file");
+
+    const result = createSymlink("my-skill", cachePath, "claude");
+
+    expect(result.skipped).toBe(true);
+    expect(fs.lstatSync(filePath).isSymbolicLink()).toBe(false);
+    expect(fs.readFileSync(filePath, "utf-8")).toBe("some file");
+  });
+
+  it("preserves user files inside an existing directory when skipping", () => {
+    const skillsDir = tmpAgentDirs.claude;
+    fs.mkdirSync(skillsDir, { recursive: true });
+
+    // Create a real directory with multiple user files
+    const realDir = path.join(skillsDir, "my-skill");
+    fs.mkdirSync(realDir);
+    fs.writeFileSync(path.join(realDir, "SKILL.md"), "authored content");
+    fs.writeFileSync(path.join(realDir, "helper.sh"), "#!/bin/bash\necho hello");
+    fs.mkdirSync(path.join(realDir, "subdir"));
+    fs.writeFileSync(path.join(realDir, "subdir", "data.json"), '{"key": "value"}');
+
+    const result = createSymlink("my-skill", cachePath, "claude");
+
+    expect(result.skipped).toBe(true);
+    // All files should be intact
+    expect(fs.readFileSync(path.join(realDir, "SKILL.md"), "utf-8")).toBe("authored content");
+    expect(fs.readFileSync(path.join(realDir, "helper.sh"), "utf-8")).toContain("echo hello");
+    expect(fs.readFileSync(path.join(realDir, "subdir", "data.json"), "utf-8")).toContain('"key"');
   });
 });
