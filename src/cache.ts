@@ -57,7 +57,7 @@ export function createSymlink(
   agentName: string,
   scope: Scope = "global",
   cwd: string = process.cwd()
-): { skillsDir: string; created: boolean } {
+): { skillsDir: string; created: boolean; skipped: boolean } {
   const { skillsDir, created } = resolveSkillsDir(agentName, scope, cwd);
 
   const linkPath = path.join(skillsDir, skillName);
@@ -68,14 +68,13 @@ export function createSymlink(
     if (existingStat.isSymbolicLink()) {
       fs.unlinkSync(linkPath);
     } else {
-      throw new Error(
-        `${linkPath} already exists and is not a symlink. Remove it manually to proceed.`
-      );
+      // Real directory/file — treat as the authored source location, don't overwrite
+      return { skillsDir, created, skipped: true };
     }
   }
 
   fs.symlinkSync(cachePath, linkPath);
-  return { skillsDir, created };
+  return { skillsDir, created, skipped: false };
 }
 
 export function skillExistsInCache(

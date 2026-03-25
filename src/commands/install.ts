@@ -61,10 +61,14 @@ export async function installCommand(
       ensureCachePath(match.collection);
       const cachePath = getCachePath(match.collection, name);
       await match.backend.downloadSkill(match.collection, name, cachePath);
-      const { skillsDir, created } = createSymlink(name, cachePath, options.agent, scope, process.cwd());
+      const { skillsDir, created, skipped } = createSymlink(name, cachePath, options.agent, scope, process.cwd());
       trackSkill(name, match.collection.id, path.join(skillsDir, name));
-      spinner.succeed(`${chalk.bold(name)} → ${scope === "project" ? "project" : "global"} ${options.agent} skills`);
-      if (created) console.log(chalk.dim(`  Created ${skillsDir}`));
+      if (skipped) {
+        spinner.succeed(`${chalk.bold(name)} already exists at ${path.join(skillsDir, name)} (source, not a symlink) — skipped`);
+      } else {
+        spinner.succeed(`${chalk.bold(name)} → ${scope === "project" ? "project" : "global"} ${options.agent} skills`);
+        if (created) console.log(chalk.dim(`  Created ${skillsDir}`));
+      }
     } catch (err) {
       spinner.fail(`${chalk.bold(name)}: ${(err as Error).message}`);
     }
